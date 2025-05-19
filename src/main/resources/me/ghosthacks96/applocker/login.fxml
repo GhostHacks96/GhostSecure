@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns:fx="http://javafx.com/fxml" alignment="CENTER" spacing="10"
+      xmlns="http://javafx.com/javafx/20" fx:controller="me.ghosthacks96.applocker.Login_GUI">
+    <Label text="Enter Password to Continue:"/>
+    <PasswordField fx:id="passwordField"/>
+    <Button fx:id="submitButton" text="Submit" onAction="#onSubmitButtonClick"/>
+    <Label fx:id="errorLabel" textFill="red"/>
+</VBox>
