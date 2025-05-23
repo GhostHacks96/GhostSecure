@@ -23,6 +23,7 @@ public class SetPassword_GUI {
     private boolean passwordSet = false;
     private String enteredPassword;
 
+
     @FXML
     private void onSubmitButtonClick() {
         String password = passwordField.getText();
@@ -40,6 +41,7 @@ public class SetPassword_GUI {
 
         enteredPassword = password; // Save the password
         passwordSet = true; // Mark as successful
+
         closeWindow();
     }
 

@@ -23,6 +23,12 @@ public class Login_GUI {
     @FXML
     public void initialize() {
         this.correctPasswordHash = Main.PASSWORD_HASH; // Use hashed password
+        passwordField.setOnKeyPressed(event -> {
+            if (event.getCode().toString().equals("ENTER")) {
+                onSubmitButtonClick(); // Trigger the onSubmit action
+            }
+        });
+
     }
 
     @FXML
@@ -31,11 +37,7 @@ public class Login_GUI {
         enteredPasswordHash = Main.hashPassword(enteredPassword); // Hash the entered password
 
         // Compare the hashes
-        if (correctPasswordHash.equals(enteredPasswordHash)) {
-            closeWindow(); // Close the login window on successful login
-        } else {
-            errorLabel.setText("Incorrect Password. Try again!");
-        }
+        closeWindow();
     }
 
     private void closeWindow() {
