@@ -19,8 +19,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class ServiceController {
-    private static final String THREAD_NAME = "BlockerDaemonThread";
-    static Thread daemonThread;
 
     static boolean shutDown = false;
 
@@ -170,7 +168,7 @@ public class ServiceController {
     public static boolean isServiceRunning() {
         Main.logger.logInfo("Checking if the service is running.");
         try {
-            if (daemonThread != null && daemonThread.isAlive() && !daemonThread.isInterrupted()
+            if (scheduler.isShutdown() || scheduler.isTerminated()
                     && Main.config.get("mode").getAsString().equals("lock")) {
                 Main.logger.logInfo("Service is active and running in locking mode.");
                 return true;

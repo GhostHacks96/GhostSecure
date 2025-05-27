@@ -40,11 +40,11 @@ public class SystemTrayIntegration {
         MenuItem restoreItem = new MenuItem("Open GUI");
         restoreItem.addActionListener(e -> Platform.runLater(() -> {
             if (primaryStage != null) {
-                if(Main.openLoginScene()){
+                if (Main.openLoginScene()) {
                     primaryStage.show();
                     primaryStage.toFront();
-                }else{
-                    PopUps.showError("No","Are you sure your supposed to be messing with this?");
+                } else {
+                    PopUps.showError("No", "Are you sure you're supposed to be messing with this?");
                 }
             }
         }));
@@ -52,49 +52,49 @@ public class SystemTrayIntegration {
 
         MenuItem starterItem = new MenuItem("Start Service");
         starterItem.addActionListener(e -> Platform.runLater(() -> {
-           if(!Main.sc.isServiceRunning()){
-               if(Main.openLoginScene()){
-                   logger.logInfo("Starting locking service.");
-                   if (Main.config.get("mode").getAsString().equals("unlock")) {
-                       Main.config.remove("mode");
-                       Main.config.addProperty("mode", "lock");
-                   }
-                   saveConfig();
-                   FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
-                   homeGUI controller = loader.getController();
-                   controller.updateServiceStatus(true);
-                   logger.logInfo("Locking service started.");
-               }else{
-                   PopUps.showError("No","Are you sure your supposed to be messing with this?");
-               }
-           }else{
-               PopUps.showWarning("Already Running","The service is already running. If you want to stop it, please use the stop button.");
-               Main.logger.logWarning("Start requested the service is already running.");
-           }
+            if (!Main.sc.isServiceRunning()) {
+                if (Main.openLoginScene()) {
+                    logger.logInfo("Starting locking service.");
+                    if (Main.config.get("mode").getAsString().equals("unlock")) {
+                        Main.config.remove("mode");
+                        Main.config.addProperty("mode", "lock");
+                    }
+                    saveConfig();
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
+                    homeGUI controller = loader.getController();
+                    controller.updateServiceStatus(true);
+                    logger.logInfo("Locking service started.");
+                } else {
+                    PopUps.showError("No", "Are you sure you're supposed to be messing with this?");
+                }
+            } else {
+                PopUps.showWarning("Already Running", "The service is already running. If you want to stop it, please use the stop button.");
+                Main.logger.logWarning("Start requested, but the service is already running.");
+            }
         }));
 
         MenuItem stopperItem = new MenuItem("Stop Service");
         stopperItem.addActionListener(e -> Platform.runLater(() -> {
-            if(Main.sc.isServiceRunning()){
-                if(Main.openLoginScene()){
+            if (Main.sc.isServiceRunning()) {
+                if (Main.openLoginScene()) {
                     logger.logInfo("Stopping locking service.");
                     if (Main.config.get("mode").getAsString().equals("lock")) {
                         Main.config.remove("mode");
                         Main.config.addProperty("mode", "unlock");
                     }
                     saveConfig();
-                    Platform.runLater(() ->{
+                    Platform.runLater(() -> {
                         FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
                         homeGUI controller = loader.getController();
                         controller.updateServiceStatus(false);
                     });
                     logger.logInfo("Locking service stopped.");
-                }else{
-                    PopUps.showError("No","Are you sure your supposed to be messing with this?");
+                } else {
+                    PopUps.showError("No", "Are you sure you're supposed to be messing with this?");
                 }
-            }else{
-                PopUps.showWarning("Not Running","The service is not running. If you want to start it, please use the start button.");
-                Main.logger.logWarning("Stop requested the service is not running.");
+            } else {
+                PopUps.showWarning("Not Running", "The service is not running. If you want to start it, please use the start button.");
+                Main.logger.logWarning("Stop requested, but the service is not running.");
             }
         }));
 
@@ -104,14 +104,14 @@ public class SystemTrayIntegration {
         // Exit menu item
         MenuItem exitItem = new MenuItem("Exit");
         exitItem.addActionListener(e -> Platform.runLater(() -> {
-            if(Main.openLoginScene()){
-                while(Main.sc.killDaemon()){
-
+            if (Main.openLoginScene()) {
+                while (Main.sc.killDaemon()) {
+                    // Loop until the service is fully shut down
                 }
                 Main.logger.onShutdown();
                 System.exit(0);
-            }else{
-                PopUps.showError("No","Are you sure your supposed to be messing with this?");
+            } else {
+                PopUps.showError("No", "Are you sure you're supposed to be messing with this?");
             }
         }));
         popupMenu.add(exitItem);
