@@ -1,20 +1,18 @@
-package me.ghosthacks96.applocker;
+package me.ghosthacks96.ghostsecure;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-import me.ghosthacks96.applocker.utils.*;
+import javafx.stage.StageStyle;
+import me.ghosthacks96.ghostsecure.utils.*;
 import org.kordamp.bootstrapfx.BootstrapFX;
 
-import java.awt.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -31,7 +29,7 @@ public class Main extends Application {
     public static String PASSWORD_HASH;
     public static JsonObject config;
 
-    public static String appDataPath = System.getenv("APPDATA") + "/ghosthacks96/";
+    public static String appDataPath = System.getenv("APPDATA") + "/ghosthacks96/GhostSecure/";
     public static Logging logger;
 
     public static FXMLLoader mainLoader;
@@ -195,15 +193,17 @@ public class Main extends Application {
             // Load the Login GUI
             FXMLLoader loginLoader = new FXMLLoader(Main.class.getResource("login.fxml"));
             Stage loginStage = new Stage();
-            Scene loginScene = new Scene(loginLoader.load(), 320, 240);
+            Scene loginScene = new Scene(loginLoader.load());
             loginStage.initModality(Modality.APPLICATION_MODAL);
             loginScene.getStylesheets().add(BootstrapFX.bootstrapFXStylesheet());
+            loginStage.initStyle(StageStyle.DECORATED);
+            loginScene.getStylesheets().add(Main.class.getResource("/me/ghosthacks96/ghostsecure/dark-theme.css").toExternalForm());
             loginStage.setAlwaysOnTop(true);
             loginStage.requestFocus();
-            loginStage.getIcons().add(new javafx.scene.image.Image(Main.class.getResource("/me/ghosthacks96/applocker/app_icon.png").toExternalForm()));
+            loginStage.getIcons().add(new javafx.scene.image.Image(Main.class.getResource("/me/ghosthacks96/ghostsecure/app_icon.png").toExternalForm()));
 
             // Set up the login stage
-            loginStage.setTitle("Login");
+            loginStage.setTitle("GhostSecure - Login");
             loginStage.setScene(loginScene);
             loginStage.showAndWait();
 
@@ -237,13 +237,16 @@ public class Main extends Application {
             FXMLLoader loader = new FXMLLoader(Main.class.getResource("setPasswordGUI.fxml"));
             Stage stage = new Stage();
             Scene scene = new Scene(loader.load());
-            stage.setTitle("Set Password");
+            stage.setTitle("GhostSecure - Set Password");
             stage.initModality(Modality.APPLICATION_MODAL); // Makes the prompt modal
+            stage.initStyle(StageStyle.DECORATED);
+            scene.getStylesheets().add(getClass().getResource("/me/ghosthacks96/ghostsecure/dark-theme.css").toExternalForm());
+
             stage.setScene(scene);
             stage.setResizable(false);
             stage.setAlwaysOnTop(true);
             stage.requestFocus();
-            stage.getIcons().add(new javafx.scene.image.Image(getClass().getResource("/me/ghosthacks96/applocker/app_icon.png").toExternalForm()));
+            stage.getIcons().add(new javafx.scene.image.Image(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png").toExternalForm()));
 
             SetPassword_GUI controller = loader.getController();
             stage.showAndWait(); // Wait until the user closes the popup
@@ -300,22 +303,22 @@ public class Main extends Application {
             mainStage = stage;
             mainLoader = new FXMLLoader(Main.class.getResource("home.fxml"));
             mainScene = new Scene(mainLoader.load(), 600, 500);
+            mainScene.getStylesheets().add(getClass().getResource("/me/ghosthacks96/ghostsecure/dark-theme.css").toExternalForm());
             mainStage.setTitle("App Locker");
             mainStage.setScene(mainScene);
 
-            mainStage.getIcons().add(new javafx.scene.image.Image(getClass().getResource("/me/ghosthacks96/applocker/app_icon.png").toExternalForm()));
+            mainStage.getIcons().add(new javafx.scene.image.Image(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png").toExternalForm()));
+            mainStage.initStyle(StageStyle.DECORATED);
 
 
-            if(config.get("mode").getAsString().equals("lock")) {
-                sc.startBlockerDaemon();
-            }
+            sc.startBlockerDaemon();
 
 
             if(!sc.isServiceRunning()){
                 mainStage.show();
                 logger.logInfo("Main stage displayed successfully.");
             }else{
-                PopUps.showInfo("Minimized to System Tray", "AppLocker is minimized to the system tray. You can restore it by using the open GUI button in the tray icon menu.");
+                PopUps.showInfo("Minimized to System Tray", "GhostSecure is minimized to the system tray. You can restore it by using the open GUI button in the tray icon menu.");
             }
 
             SystemTrayIntegration sysTray = new SystemTrayIntegration();

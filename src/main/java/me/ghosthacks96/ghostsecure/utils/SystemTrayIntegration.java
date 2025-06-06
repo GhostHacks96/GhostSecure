@@ -1,17 +1,15 @@
-package me.ghosthacks96.applocker.utils;
+package me.ghosthacks96.ghostsecure.utils;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
-import me.ghosthacks96.applocker.Main;
-import me.ghosthacks96.applocker.homeGUI;
+import me.ghosthacks96.ghostsecure.Main;
+import me.ghosthacks96.ghostsecure.homeGUI;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
-import static me.ghosthacks96.applocker.Main.logger;
-import static me.ghosthacks96.applocker.Main.saveConfig;
+import static me.ghosthacks96.ghostsecure.Main.logger;
+import static me.ghosthacks96.ghostsecure.Main.saveConfig;
 
 public class SystemTrayIntegration {
     public static TrayIcon trayIcon;
@@ -30,7 +28,7 @@ public class SystemTrayIntegration {
 
         // Load an image for the tray icon
         Image trayImage = Toolkit.getDefaultToolkit().getImage(
-                SystemTrayIntegration.class.getResource("/me/ghosthacks96/applocker/tray_icon.png")
+                SystemTrayIntegration.class.getResource("/me/ghosthacks96/ghostsecure/tray_icon.png")
         );
 
         // Create a popup menu
@@ -41,6 +39,11 @@ public class SystemTrayIntegration {
         restoreItem.addActionListener(e -> Platform.runLater(() -> {
             if (primaryStage != null) {
                 if (Main.openLoginScene()) {
+                    Platform.runLater(() -> {
+                        FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
+                        homeGUI controller = loader.getController();
+                        controller.updateServiceStatus();
+                    });
                     primaryStage.show();
                     primaryStage.toFront();
                 } else {
@@ -62,7 +65,7 @@ public class SystemTrayIntegration {
                     saveConfig();
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
                     homeGUI controller = loader.getController();
-                    controller.updateServiceStatus(true);
+                    controller.updateServiceStatus();
                     logger.logInfo("Locking service started.");
                 } else {
                     PopUps.showError("No", "Are you sure you're supposed to be messing with this?");
@@ -86,7 +89,7 @@ public class SystemTrayIntegration {
                     Platform.runLater(() -> {
                         FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
                         homeGUI controller = loader.getController();
-                        controller.updateServiceStatus(false);
+                        controller.updateServiceStatus();
                     });
                     logger.logInfo("Locking service stopped.");
                 } else {
@@ -117,7 +120,7 @@ public class SystemTrayIntegration {
         popupMenu.add(exitItem);
 
         // Create the tray icon
-        trayIcon = new TrayIcon(trayImage, "AppLocker", popupMenu);
+        trayIcon = new TrayIcon(trayImage, "ghostsecure", popupMenu);
         trayIcon.setImageAutoSize(true);
 
         // Add the tray icon to the system tray
@@ -132,7 +135,7 @@ public class SystemTrayIntegration {
         primaryStage.setOnCloseRequest(event -> {
             event.consume();
             Platform.runLater(primaryStage::hide);
-            PopUps.showInfo("Minimized to System Tray", "AppLocker is minimized to the system tray. You can restore it by using the open GUI button in the tray icon menu.");
+            PopUps.showInfo("Minimized to System Tray", "ghostsecure is minimized to the system tray. You can restore it by using the open GUI button in the tray icon menu.");
         });
     }
 }

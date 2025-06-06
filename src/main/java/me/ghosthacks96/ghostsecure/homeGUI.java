@@ -1,4 +1,4 @@
-package me.ghosthacks96.applocker;
+package me.ghosthacks96.ghostsecure;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -12,14 +12,14 @@ import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import me.ghosthacks96.applocker.utils.LockedItem;
+import me.ghosthacks96.ghostsecure.utils.LockedItem;
 
 import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static me.ghosthacks96.applocker.Main.logger;
-import static me.ghosthacks96.applocker.Main.saveConfig;
+import static me.ghosthacks96.ghostsecure.Main.logger;
+import static me.ghosthacks96.ghostsecure.Main.saveConfig;
 
 public class homeGUI {
 
@@ -102,7 +102,7 @@ public class homeGUI {
 
         // Update UI
 
-        updateServiceStatus(Main.sc.isServiceRunning());
+        updateServiceStatus();
 
     }
 
@@ -168,7 +168,7 @@ public class homeGUI {
             Main.config.addProperty("mode", "lock");
         }
         saveConfig();
-        Platform.runLater(() -> updateServiceStatus(true));
+        Platform.runLater(() -> updateServiceStatus());
         logger.logInfo("Locking service started.");
     }
 
@@ -180,12 +180,13 @@ public class homeGUI {
             Main.config.addProperty("mode", "unlock");
         }
         saveConfig();
-        Platform.runLater(() -> updateServiceStatus(false));
+        Platform.runLater(() -> updateServiceStatus());
         logger.logInfo("Locking service stopped.");
     }
 
 
-    public void updateServiceStatus(boolean isRunning) {
+    public void updateServiceStatus() {
+        boolean isRunning = Main.sc.isServiceRunning();
         logger.logInfo("Updating service status to " + (isRunning ? "RUNNING" : "STOPPED"));
         if (isRunning) {
             startServiceButton.setDisable(true);

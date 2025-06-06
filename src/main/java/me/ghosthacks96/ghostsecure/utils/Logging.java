@@ -1,4 +1,4 @@
-package me.ghosthacks96.applocker.utils;
+package me.ghosthacks96.ghostsecure.utils;
 
 import java.io.*;
 import java.nio.file.*;

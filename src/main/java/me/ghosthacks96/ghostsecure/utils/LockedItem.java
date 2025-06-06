@@ -1,4 +1,4 @@
-package me.ghosthacks96.applocker.utils;
+package me.ghosthacks96.ghostsecure.utils;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;

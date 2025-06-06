@@ -1,6 +1,6 @@
-package me.ghosthacks96.applocker.utils;
+package me.ghosthacks96.ghostsecure.utils;
 
-import me.ghosthacks96.applocker.Main;
+import me.ghosthacks96.ghostsecure.Main;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -166,20 +166,19 @@ public class ServiceController {
     }
 
     public static boolean isServiceRunning() {
-        Main.logger.logInfo("Checking if the service is running.");
         try {
-            if (scheduler.isShutdown() || scheduler.isTerminated()
+            if (scheduler != null && !scheduler.isShutdown() && !scheduler.isTerminated()
                     && Main.config.get("mode").getAsString().equals("lock")) {
                 Main.logger.logInfo("Service is active and running in locking mode.");
                 return true;
             }
         } catch (Exception e) {
             Main.logger.logWarning("Error while checking service status: " + e.getMessage());
-            return false;
         }
         Main.logger.logInfo("Service is not running.");
         return false;
     }
+
 
     public static boolean killDaemon() {
         try {

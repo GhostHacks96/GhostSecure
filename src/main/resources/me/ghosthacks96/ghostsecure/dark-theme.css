@@ -1,0 +1,64 @@
+/* Dark Theme for JavaFX App Locker */
+.root {
+    -fx-base: #222222;
+    -fx-background: #000000;
+    -fx-control-inner-background: rgba(0, 0, 0, 0.3);
+    -fx-control-inner-background-alt: rgba(0, 0, 0, 0.2);
+    -fx-accent: #00ffff;
+    -fx-default-button: #00ffff;
+    -fx-focus-color: #00ffff;
+    -fx-faint-focus-color: rgba(0, 255, 255, 0.1);
+    -fx-focused-text-base-color: white;
+    -fx-focused-mark-color: #00ffff;
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: rgba(0, 0, 0, 0.8);
+}
+
+.tab-pane .tab {
+    -fx-background-color: rgba(34, 34, 34, 0.8);
+    -fx-text-fill: #cccccc;
+    -fx-background-radius: 8 8 0 0;
+    -fx-border-color: rgba(0, 255, 255, 0.3);
+    -fx-border-width: 1 1 0 1;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: rgba(0, 255, 255, 0.1);
+    -fx-text-fill: #00ffff;
+    -fx-border-color: #00ffff;
+}
+
+.table-view {
+    -fx-background-color: rgba(0, 0, 0, 0.3);
+    -fx-table-cell-border-color: rgba(0, 255, 255, 0.2);
+    -fx-table-header-border-color: rgba(0, 255, 255, 0.3);
+}
+
+.table-view .column-header {
+    -fx-background-color: rgba(0, 0, 0, 0.5);
+    -fx-text-fill: #00ffff;
+    -fx-border-color: rgba(0, 255, 255, 0.3);
+}
+
+.table-view .table-cell {
+    -fx-text-fill: white;
+    -fx-border-color: rgba(0, 255, 255, 0.1);
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: rgba(0, 255, 255, 0.3);
+    -fx-text-fill: white;
+}
+
+.button:hover {
+    -fx-scale-y: 1.05;
+    -fx-scale-x: 1.05;
+}
+
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #00ffff;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 255, 0.3), 5, 0, 0, 0);
+}

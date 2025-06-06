@@ -1,4 +1,4 @@
-package me.ghosthacks96.applocker;
+package me.ghosthacks96.ghostsecure;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;

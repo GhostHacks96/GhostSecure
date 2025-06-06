@@ -1,0 +1,62 @@
+plugins {
+    id 'application' // For Java application support
+    id 'org.javamodularity.moduleplugin' version '1.8.9' // Support for modular projects
+    id 'org.beryx.jlink' version '2.25.0' // Plugin for jlink plugins
+    id 'org.openjfx.javafxplugin' version '0.0.14' // Correct OpenJFX plugin
+
+}
+
+repositories {
+    mavenCentral() // Central repository for dependencies
+}
+
+dependencies {
+    // Use the correct version of dependencies compatible with Java 24
+    implementation "org.openjfx:javafx-controls:24"
+    implementation "org.openjfx:javafx-fxml:24"
+    implementation "org.openjfx:javafx-graphics:24"
+
+    // Other dependencies remain
+    implementation 'org.kordamp.bootstrapfx:bootstrapfx-core:0.4.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+}
+
+java {
+    // Update Java toolchain to target Java 24
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(24) // Ensures compatibility with Java 24
+    }
+
+    modularity.inferModulePath = true // Enable module path inference
+}
+javafx {
+    version = '24' // Use OpenJFX version 21
+    modules = [ 'javafx.base','javafx.controls', 'javafx.fxml' ] // Include required JavaFX modules
+}
+
+
+application {
+    // Specify the main module and the fully qualified main class
+    mainModule = 'me.ghosthacks96.ghostsecure'
+    mainClass = 'me.ghosthacks96.ghostsecure.Main'
+}
+
+jlink {
+    // Configurations for creating a custom runtime image with `jlink`
+    launcher {
+        name = 'GhostSecure_jar' // Name of the launcher script/executable
+    }
+
+    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+
+    forceMerge('kordamp.bootstrapfx')
+
+    jpackage {
+        // Optional: Configure for packaging as an installer (if needed)
+        installerType = 'exe' // For Windows (or 'dmg' for macOS, 'deb' or 'rpm' for Linux)
+        jvmArgs = ['--enable-preview'] // JVM arguments for the packaged runtime
+        imageName = 'GhostSecure'
+        icon = file('src/main/resources/me/ghosthacks96/ghostsecure/app_icon.ico')
+
+    }
+}
