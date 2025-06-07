@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure;
+package me.ghosthacks96.ghostsecure.gui;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -12,14 +12,14 @@ import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import me.ghosthacks96.ghostsecure.utils.LockedItem;
+import me.ghosthacks96.ghostsecure.Main;
+import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
 
 import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static me.ghosthacks96.ghostsecure.Main.logger;
-import static me.ghosthacks96.ghostsecure.Main.saveConfig;
 
 public class homeGUI {
 
@@ -113,7 +113,7 @@ public class homeGUI {
         if (selectedDirectory != null) {
             LockedItem lockedFolder = new LockedItem(selectedDirectory.getAbsolutePath(), selectedDirectory.getName(), true);
             Main.lockedItems.add(lockedFolder);
-            saveConfig();
+            Main.config.saveConfig();
             refreshTableData();
             logger.logInfo("Added folder: " + selectedDirectory.getName());
         } else {
@@ -126,7 +126,7 @@ public class homeGUI {
         logger.logInfo("Removing selected folders.");
         List<LockedItem> selectedFolders = folderItems.stream().filter(LockedItem::isSelected).toList();
         Main.lockedItems.removeAll(selectedFolders);
-        saveConfig();
+        Main.config.saveConfig();
         refreshTableData();
         selectedFolders.forEach(item -> logger.logInfo("Removed folder: " + item.getName()));
     }
@@ -141,7 +141,7 @@ public class homeGUI {
         if (selectedFile != null) {
             LockedItem lockedProgram = new LockedItem(selectedFile.getAbsolutePath(), selectedFile.getName(), true);
             Main.lockedItems.add(lockedProgram);
-            saveConfig();
+            Main.config.saveConfig();
             refreshTableData();
             logger.logInfo("Added program: " + selectedFile.getName());
         } else {
@@ -154,7 +154,7 @@ public class homeGUI {
         logger.logInfo("Removing selected programs.");
         List<LockedItem> selectedPrograms = programItems.stream().filter(LockedItem::isSelected).toList();
         Main.lockedItems.removeAll(selectedPrograms);
-        saveConfig();
+        Main.config.saveConfig();
         refreshTableData();
         selectedPrograms.forEach(item -> logger.logInfo("Removed program: " + item.getName()));
     }
@@ -163,11 +163,11 @@ public class homeGUI {
     public void startService() {
 
         logger.logInfo("Starting locking service.");
-        if (Main.config.get("mode").getAsString().equals("unlock")) {
-            Main.config.remove("mode");
-            Main.config.addProperty("mode", "lock");
+        if (Main.config.getJsonConfig().get("mode").getAsString().equals("unlock")) {
+            Main.config.getJsonConfig().remove("mode");
+            Main.config.getJsonConfig().addProperty("mode", "lock");
         }
-        saveConfig();
+        Main.config.saveConfig();
         Platform.runLater(() -> updateServiceStatus());
         logger.logInfo("Locking service started.");
     }
@@ -175,11 +175,11 @@ public class homeGUI {
     @FXML
     public void stopService() {
         logger.logInfo("Stopping locking service.");
-        if (Main.config.get("mode").getAsString().equals("lock")) {
-            Main.config.remove("mode");
-            Main.config.addProperty("mode", "unlock");
+        if (Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
+            Main.config.getJsonConfig().remove("mode");
+            Main.config.getJsonConfig().addProperty("mode", "unlock");
         }
-        saveConfig();
+        Main.config.saveConfig();
         Platform.runLater(() -> updateServiceStatus());
         logger.logInfo("Locking service stopped.");
     }
@@ -212,7 +212,7 @@ public class homeGUI {
             item.setSelected(false);
             logger.logInfo("Toggled lock status for folder: " + item.getName());
         });
-        saveConfig();
+        Main.config.saveConfig();
         refreshTableData();
     }
 
@@ -224,7 +224,7 @@ public class homeGUI {
             item.setSelected(false);
             logger.logInfo("Toggled lock status for program: " + item.getName());
         });
-        saveConfig();
+        Main.config.saveConfig();
         refreshTableData();
     }
 }

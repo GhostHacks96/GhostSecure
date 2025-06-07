@@ -8,4 +8,8 @@ module me.ghosthacks96.ghostsecure {
     opens me.ghosthacks96.ghostsecure to javafx.fxml, com.google.gson;
     exports me.ghosthacks96.ghostsecure;
     exports me.ghosthacks96.ghostsecure.utils;
+    exports me.ghosthacks96.ghostsecure.itemTypes;
+    exports me.ghosthacks96.ghostsecure.utils.controllers;
+    exports me.ghosthacks96.ghostsecure.gui;
+    opens me.ghosthacks96.ghostsecure.gui to com.google.gson, javafx.fxml;
 }

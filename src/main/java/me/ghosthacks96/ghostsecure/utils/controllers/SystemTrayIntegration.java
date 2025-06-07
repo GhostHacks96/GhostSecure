@@ -1,15 +1,15 @@
-package me.ghosthacks96.ghostsecure.utils;
+package me.ghosthacks96.ghostsecure.utils.controllers;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import me.ghosthacks96.ghostsecure.Main;
-import me.ghosthacks96.ghostsecure.homeGUI;
+import me.ghosthacks96.ghostsecure.gui.homeGUI;
+import me.ghosthacks96.ghostsecure.utils.PopUps;
 
 import java.awt.*;
 
 import static me.ghosthacks96.ghostsecure.Main.logger;
-import static me.ghosthacks96.ghostsecure.Main.saveConfig;
 
 public class SystemTrayIntegration {
     public static TrayIcon trayIcon;
@@ -58,11 +58,11 @@ public class SystemTrayIntegration {
             if (!Main.sc.isServiceRunning()) {
                 if (Main.openLoginScene()) {
                     logger.logInfo("Starting locking service.");
-                    if (Main.config.get("mode").getAsString().equals("unlock")) {
-                        Main.config.remove("mode");
-                        Main.config.addProperty("mode", "lock");
+                    if (Main.config.getJsonConfig().get("mode").getAsString().equals("unlock")) {
+                        Main.config.getJsonConfig().remove("mode");
+                        Main.config.getJsonConfig().addProperty("mode", "lock");
                     }
-                    saveConfig();
+                    Main.config.saveConfig();
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
                     homeGUI controller = loader.getController();
                     controller.updateServiceStatus();
@@ -81,11 +81,11 @@ public class SystemTrayIntegration {
             if (Main.sc.isServiceRunning()) {
                 if (Main.openLoginScene()) {
                     logger.logInfo("Stopping locking service.");
-                    if (Main.config.get("mode").getAsString().equals("lock")) {
-                        Main.config.remove("mode");
-                        Main.config.addProperty("mode", "unlock");
+                    if (Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
+                        Main.config.getJsonConfig().remove("mode");
+                        Main.config.getJsonConfig().addProperty("mode", "unlock");
                     }
-                    saveConfig();
+                    Main.config.saveConfig();
                     Platform.runLater(() -> {
                         FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
                         homeGUI controller = loader.getController();

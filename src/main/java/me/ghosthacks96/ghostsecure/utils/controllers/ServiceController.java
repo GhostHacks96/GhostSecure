@@ -1,6 +1,7 @@
-package me.ghosthacks96.ghostsecure.utils;
+package me.ghosthacks96.ghostsecure.utils.controllers;
 
 import me.ghosthacks96.ghostsecure.Main;
+import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -85,7 +86,7 @@ public class ServiceController {
                         continue;
                     }
 
-                    if (li.isLocked() && Main.config.get("mode").getAsString().equals("lock")) {
+                    if (li.isLocked() && Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
                         // Deny all access to the folder
                         AclEntry denyAllAccess = AclEntry.newBuilder()
                                 .setType(AclEntryType.DENY)
@@ -96,7 +97,7 @@ public class ServiceController {
                                 .build();
 
                         aclView.setAcl(List.of(denyAllAccess));
-                    } else if (!li.isLocked() || Main.config.get("mode").getAsString().equals("unlock") || shutDown) {
+                    } else if (!li.isLocked() || Main.config.getJsonConfig().get("mode").getAsString().equals("unlock") || shutDown) {
 
                         if (shutDown) {
                             System.out.println("Shutting down service. unlocking Folders: " + li.getPath());
@@ -136,7 +137,7 @@ public class ServiceController {
 
                 for (LockedItem li : Main.lockedItems) {
                     if (line.contains(li.getName()) && li.isLocked()
-                            && Main.config.get("mode").getAsString().equals("lock")) {
+                            && Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
                         if (li.getName().contains(".exe")) {
                             Main.logger.logWarning("Process " + li.getName() + " is locked and will be terminated.");
                             killProcess(li.getName());
@@ -168,7 +169,7 @@ public class ServiceController {
     public static boolean isServiceRunning() {
         try {
             if (scheduler != null && !scheduler.isShutdown() && !scheduler.isTerminated()
-                    && Main.config.get("mode").getAsString().equals("lock")) {
+                    && Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
                 Main.logger.logInfo("Service is active and running in locking mode.");
                 return true;
             }

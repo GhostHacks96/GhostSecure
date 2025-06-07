@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.homeGUI">
+    <style>
+        -fx-background-color: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+    </style>
+
+    <!-- Header -->
+    <top>
+        <VBox>
+            <HBox alignment="CENTER" spacing="15">
+                <padding>
+                    <Insets top="20" bottom="15" left="20" right="20" />
+                </padding>
+                <style>
+                    -fx-background-color: rgba(0, 0, 0, 0.9);
+                    -fx-border-color: rgba(0, 255, 255, 0.3);
+                    -fx-border-width: 0 0 1 0;
+                </style>
+
+                <Label text="🔒" textAlignment="CENTER">
+                    <font>
+                        <Font size="24" />
+                    </font>
+                </Label>
+
+                <Label text="App Locker Control Panel">
+                    <font>
+                        <Font name="System Bold" size="20" />
+                    </font>
+                    <style>
+                        -fx-text-fill: #00ffff;
+                    </style>
+                </Label>
+
+                <Region HBox.hgrow="ALWAYS" />
+
+                <Label text="Status:" textAlignment="CENTER">
+                    <font>
+                        <Font name="System Bold" size="12" />
+                    </font>
+                    <style>
+                        -fx-text-fill: #cccccc;
+                    </style>
+                </Label>
+
+                <Label fx:id="lockStatus" text="Locked?" textAlignment="CENTER">
+                    <font>
+                        <Font name="System Bold" size="14" />
+                    </font>
+                    <style>
+                        -fx-text-fill: #00ffff;
+                        -fx-background-color: rgba(0, 255, 255, 0.1);
+                        -fx-background-radius: 15;
+                        -fx-padding: 5 12;
+                    </style>
+                </Label>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <TabPane>
+            <style>
+                -fx-background-color: transparent;
+                -fx-tab-min-height: 40;
+            </style>
+
+            <!-- Service Control Tab -->
+            <Tab text="🔧 Service Control" closable="false">
+                <style>
+                    -fx-background-color: rgba(34, 34, 34, 0.95);
+                </style>
+
+                <VBox alignment="CENTER" spacing="30">
+                    <padding>
+                        <Insets top="50" bottom="50" left="50" right="50" />
+                    </padding>
+
+                    <VBox alignment="CENTER" spacing="20">
+                        <Label text="Service Management" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="24" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #00ffff;
+                            </style>
+                        </Label>
+
+                        <Label text="Control the App Locker service to enable or disable protection" textAlignment="CENTER">
+                            <font>
+                                <Font size="14" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #cccccc;
+                            </style>
+                        </Label>
+                    </VBox>
+
+                    <HBox spacing="20" alignment="CENTER">
+                        <Button fx:id="startServiceButton" onAction="#startService" text="START SERVICE" prefWidth="160" prefHeight="50">
+                            <font>
+                                <Font name="System Bold" size="14" />
+                            </font>
+                            <style>
+                                -fx-background-color: linear-gradient(135deg, #2ed573 0%, #1e824c 100%);
+                                -fx-text-fill: white;
+                                -fx-background-radius: 8;
+                                -fx-cursor: hand;
+                                -fx-effect: dropshadow(gaussian, rgba(46, 213, 115, 0.3), 8, 0, 0, 3);
+                            </style>
+                        </Button>
+
+                        <Button fx:id="stopServiceButton" onAction="#stopService" text="STOP SERVICE" prefWidth="160" prefHeight="50">
+                            <font>
+                                <Font name="System Bold" size="14" />
+                            </font>
+                            <style>
+                                -fx-background-color: linear-gradient(135deg, #ff4757 0%, #c44569 100%);
+                                -fx-text-fill: white;
+                                -fx-background-radius: 8;
+                                -fx-cursor: hand;
+                                -fx-effect: dropshadow(gaussian, rgba(255, 71, 87, 0.3), 8, 0, 0, 3);
+                            </style>
+                        </Button>
+                    </HBox>
+                </VBox>
+            </Tab>
+
+            <!-- Folder Management Tab -->
+            <Tab text="📁 Folder Management" closable="false">
+                <style>
+                    -fx-background-color: rgba(34, 34, 34, 0.95);
+                </style>
+
+                <VBox spacing="20">
+                    <padding>
+                        <Insets top="30" bottom="30" left="30" right="30" />
+                    </padding>
+
+                    <Label text="Protected Folders" textAlignment="CENTER">
+                        <font>
+                            <Font name="System Bold" size="20" />
+                        </font>
+                        <style>
+                            -fx-text-fill: #00ffff;
+                        </style>
+                    </Label>
+
+                    <TableView fx:id="folderTable" prefHeight="300">
+                        <style>
+                            -fx-background-color: rgba(0, 0, 0, 0.3);
+                            -fx-table-cell-border-color: rgba(0, 255, 255, 0.2);
+                            -fx-selection-bar: rgba(0, 255, 255, 0.3);
+                            -fx-selection-bar-non-focused: rgba(0, 255, 255, 0.1);
+                        </style>
+
+                        <columns>
+                            <TableColumn fx:id="folderCheckBox" editable="true" text="Select" prefWidth="70">
+                                <style>
+                                    -fx-text-fill: #00ffff;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="folderNameColumn" text="Folder Name" prefWidth="150">
+                                <style>
+                                    -fx-text-fill: #00ffff;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="folderStatusColumn" text="Lock Status" prefWidth="120">
+                                <style>
+                                    -fx-text-fill: #00ffff;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="folderPathColumn" text="Path" prefWidth="300">
+                                <style>
+                                    -fx-text-fill: #00ffff;
+                                </style>
+                            </TableColumn>
+                        </columns>
+                    </TableView>
+
+                    <HBox spacing="15" alignment="CENTER">
+                        <Button fx:id="addFolderButton" onAction="#addFolder" text="ADD FOLDER" prefWidth="120" prefHeight="40">
+                            <font>
+                                <Font name="System Bold" size="12" />
+                            </font>
+                            <style>
+                                -fx-background-color: linear-gradient(135deg, #00ffff 0%, #0099cc 100%);
+                                -fx-text-fill: #000000;
+                                -fx-background-radius: 6;
+                                -fx-cursor: hand;
+                            </style>
+                        </Button>
+
+                        <Button fx:id="removeFolderButton" onAction="#removeFolder" text="REMOVE" prefWidth="120" prefHeight="40">
+                            <font>
+                                <Font name="System Bold" size="12" />
+                            </font>
+                            <style>
+                                -fx-background-color: linear-gradient(135deg, #ff4757 0%, #c44569 100%);
+                                -fx-text-fill: white;
+                                -fx-background-radius: 6;
+                                -fx-cursor: hand;
+                            </style>
+                        </Button>
+
+                        <Button fx:id="switchFolderLock" onAction="#swapFLockStatus" text="TOGGLE LOCK" prefWidth="120" prefHeight="40">
+                            <font>
+                                <Font name="System Bold" size="12" />
+                            </font>
+                            <style>
+                                -fx-background-color: linear-gradient(135deg, #ffa502 0%, #ff6348 100%);
+                                -fx-text-fill: white;
+                                -fx-background-radius: 6;
+                                -fx-cursor: hand;
+                            </style>
+                        </Button>
+                    </HBox>
+                </VBox>
+            </Tab>
+
+            <!-- Program Management Tab -->
+            <Tab text="💻 Program Management" closable="false">
+                <style>
+                    -fx-background-color: rgba(34, 34, 34, 0.95);
+                </style>
+
+                <VBox spacing="20">
+                    <padding>
+                        <Insets top="30" bottom="30" left="30" right="30" />
+                    </padding>
+
+                    <Label text="Protected Programs" textAlignment="CENTER">
+                        <font>
+                            <Font name="System Bold" size="20" />
+                        </font>
+                        <style>
+                            -fx-text-fill: #00ffff;
+                        </style>
+                    </Label>
+
+                    <TableView fx:id="programTable" prefHeight="300">
+                        <style>
+                            -fx-background-color: rgba(0, 0, 0, 0.3);
+                            -fx-table-cell-border-color: rgba(0, 255, 255, 0.2);
+                            -fx-selection-bar: rgba(0, 255, 255, 0.3);
+                            -fx-selection-bar-non-focused: rgba(0, 255, 255, 0.1);
+                        </style>
+
+                        <columns>
+                            <TableColumn fx:id="programCheckBox" editable="true" text="Select" prefWidth="70">
+                                <style>
+                                    -fx-text-fill: #00ffff;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="programPathColumn" text="Program Name" prefWidth="300">
+                                <style>
+                                    -fx-text-fill: #00ffff;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="programActionColumn" text="Lock Status" prefWidth="150">
+                                <style>
+                                    -fx-text-fill: #00ffff;
+                                </style>
+                            </TableColumn>
+                        </columns>
+                    </TableView>
+
+                    <HBox spacing="15" alignment="CENTER">
+                        <Button fx:id="addProgramButton" onAction="#addProgram" text="ADD PROGRAM" prefWidth="120" prefHeight="40">
+                            <font>
+                                <Font name="System Bold" size="12" />
+                            </font>
+                            <style>
+                                -fx-background-color: linear-gradient(135deg, #00ffff 0%, #0099cc 100%);
+                                -fx-text-fill: #000000;
+                                -fx-background-radius: 6;
+                                -fx-cursor: hand;
+                            </style>
+                        </Button>
+
+                        <Button fx:id="removeProgramButton" onAction="#removeProgram" text="REMOVE" prefWidth="120" prefHeight="40">
+                            <font>
+                                <Font name="System Bold" size="12" />
+                            </font>
+                            <style>
+                                -fx-background-color: linear-gradient(135deg, #ff4757 0%, #c44569 100%);
+                                -fx-text-fill: white;
+                                -fx-background-radius: 6;
+                                -fx-cursor: hand;
+                            </style>
+                        </Button>
+
+                        <Button fx:id="switchProgramLock" onAction="#swapPLockStatus" text="TOGGLE LOCK" prefWidth="120" prefHeight="40">
+                            <font>
+                                <Font name="System Bold" size="12" />
+                            </font>
+                            <style>
+                                -fx-background-color: linear-gradient(135deg, #ffa502 0%, #ff6348 100%);
+                                -fx-text-fill: white;
+                                -fx-background-radius: 6;
+                                -fx-cursor: hand;
+                            </style>
+                        </Button>
+                    </HBox>
+                </VBox>
+            </Tab>
+        </TabPane>
+    </center>
+</BorderPane>

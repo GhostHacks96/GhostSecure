@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure.utils;
+package me.ghosthacks96.ghostsecure.utils.controllers;
 
 import java.io.*;
 import java.nio.file.*;
