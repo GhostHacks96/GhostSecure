@@ -1,10 +1,11 @@
-package me.ghosthacks96.ghostsecure;
+package me.ghosthacks96.ghostsecure.gui;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.stage.Stage;
+import me.ghosthacks96.ghostsecure.Main;
 
 public class Login_GUI {
     String correctPasswordHash;
@@ -28,6 +29,8 @@ public class Login_GUI {
                 onSubmitButtonClick(); // Trigger the onSubmit action
             }
         });
+
+
 
     }
 

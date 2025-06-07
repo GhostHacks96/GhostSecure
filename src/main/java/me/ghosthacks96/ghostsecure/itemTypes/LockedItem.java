@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure.utils;
+package me.ghosthacks96.ghostsecure.itemTypes;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
