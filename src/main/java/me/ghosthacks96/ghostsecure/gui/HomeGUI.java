@@ -29,6 +29,12 @@ import static me.ghosthacks96.ghostsecure.Main.logger;
  */
 public class HomeGUI {
 
+    public Button addProgramButton;
+    public Button removeProgramButton;
+    public Button switchProgramLock;
+    public Button addFolderButton;
+    public Button removeFolderButton;
+    public Button switchFolderLock;
     // UI Components
     @FXML private Button startServiceButton;
     @FXML private Button stopServiceButton;
@@ -168,7 +174,7 @@ public class HomeGUI {
             Main.config.getJsonConfig().addProperty("mode", "lock");
         }
         Config.saveConfig();
-        Platform.runLater(() -> updateServiceStatus());
+        Platform.runLater(this::updateServiceStatus);
         logger.logInfo("Locking service started.");
     }
 
@@ -180,7 +186,7 @@ public class HomeGUI {
             Main.config.getJsonConfig().addProperty("mode", "unlock");
         }
         Config.saveConfig();
-        Platform.runLater(() -> updateServiceStatus());
+        Platform.runLater(this::updateServiceStatus);
         logger.logInfo("Locking service stopped.");
     }
 

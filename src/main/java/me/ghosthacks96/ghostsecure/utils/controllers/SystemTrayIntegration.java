@@ -119,7 +119,7 @@ public class SystemTrayIntegration {
         popupMenu.add(exitItem);
 
         // Create the tray icon
-        trayIcon = new TrayIcon(trayImage, "ghostsecure", popupMenu);
+        trayIcon = new TrayIcon(trayImage, "GhostSecure", popupMenu);
         trayIcon.setImageAutoSize(true);
 
         // Add the tray icon to the system tray
@@ -132,9 +132,16 @@ public class SystemTrayIntegration {
 
         // Minimize to tray on close request
         primaryStage.setOnCloseRequest(event -> {
-            event.consume();
-            Platform.runLater(primaryStage::hide);
-            Main.sgh.showInfo("Minimized to System Tray", "ghostsecure is minimized to the system tray. You can restore it by using the open GUI button in the tray icon menu.");
+            if (ServiceController.isServiceRunning()) {
+                event.consume();
+                Platform.runLater(primaryStage::hide);
+                Main.sgh.showInfo("Minimized to System Tray", "GhostSecure is minimized to the system tray. You can restore it by using the open GUI button in the tray icon menu.");
+            }else{
+                event.consume();
+                Main.logger.onShutdown();
+                Main.sgh.showInfo("Exiting GhostSecure", "Exiting application.");
+                System.exit(0);
+            }
         });
     }
 }

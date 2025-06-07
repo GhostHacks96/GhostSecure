@@ -7,7 +7,7 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.HomeGUI">
     <style>
-        -fx-background-color: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+        -fx-background-color: linear-gradient(to bottom right, #0a0a0a 0%, #1a1a1a 100%);
     </style>
 
     <!-- Header -->
@@ -18,8 +18,8 @@
                     <Insets top="25" bottom="20" left="30" right="30" />
                 </padding>
                 <style>
-                    -fx-background-color: rgba(0, 0, 0, 0.95);
-                    -fx-border-color: rgba(0, 212, 255, 0.25);
+                    -fx-background-color: #000000f2;
+                    -fx-border-color: #00d4ff40;
                     -fx-border-width: 0 0 2 0;
                 </style>
 
@@ -35,7 +35,7 @@
                     </font>
                     <style>
                         -fx-text-fill: #00d4ff;
-                        -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.3), 3, 0, 0, 0);
+                        -fx-effect: dropshadow(gaussian, #00d4ff4d, 3, 0, 0, 0);
                     </style>
                 </Label>
 
@@ -72,7 +72,7 @@
                         <Insets top="60" bottom="60" left="50" right="50" />
                     </padding>
                     <style>
-                        -fx-background-color: rgba(30, 30, 30, 0.95);
+                        -fx-background-color: #1e1e1ef2;
                         -fx-background-radius: 0 0 12 12;
                     </style>
 
@@ -83,7 +83,7 @@
                             </font>
                             <style>
                                 -fx-text-fill: #00d4ff;
-                                -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.3), 3, 0, 0, 0);
+                                -fx-effect: dropshadow(gaussian, #00d4ff4d, 3, 0, 0, 0);
                             </style>
                         </Label>
 
@@ -120,7 +120,7 @@
                         <Insets top="35" bottom="35" left="35" right="35" />
                     </padding>
                     <style>
-                        -fx-background-color: rgba(30, 30, 30, 0.95);
+                        -fx-background-color: #1e1e1ef2;
                         -fx-background-radius: 0 0 12 12;
                     </style>
 
@@ -130,13 +130,13 @@
                         </font>
                         <style>
                             -fx-text-fill: #00d4ff;
-                            -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.3), 3, 0, 0, 0);
+                            -fx-effect: dropshadow(gaussian, #00d4ff4d, 3, 0, 0, 0);
                         </style>
                     </Label>
 
                     <TableView fx:id="folderTable" prefHeight="320">
                         <columns>
-                            <TableColumn fx:id="folderCheckBox" editable="true" text="Select" prefWidth="80" />
+                            <TableColumn fx:id="folderCheckBox" text="Select"/>
                             <TableColumn fx:id="folderNameColumn" text="Folder Name" prefWidth="160" />
                             <TableColumn fx:id="folderStatusColumn" text="Lock Status" prefWidth="140" />
                             <TableColumn fx:id="folderPathColumn" text="Path" prefWidth="320" />
@@ -172,7 +172,7 @@
                         <Insets top="35" bottom="35" left="35" right="35" />
                     </padding>
                     <style>
-                        -fx-background-color: rgba(30, 30, 30, 0.95);
+                        -fx-background-color: #1e1e1ef2;
                         -fx-background-radius: 0 0 12 12;
                     </style>
 
@@ -182,13 +182,13 @@
                         </font>
                         <style>
                             -fx-text-fill: #00d4ff;
-                            -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.3), 3, 0, 0, 0);
+                            -fx-effect: dropshadow(gaussian, #00d4ff4d, 3, 0, 0, 0);
                         </style>
                     </Label>
 
                     <TableView fx:id="programTable" prefHeight="320">
                         <columns>
-                            <TableColumn fx:id="programCheckBox" editable="true" text="Select" prefWidth="80" />
+                            <TableColumn fx:id="programCheckBox" text="Select"/>
                             <TableColumn fx:id="programPathColumn" text="Program Name" prefWidth="350" />
                             <TableColumn fx:id="programActionColumn" text="Lock Status" prefWidth="170" />
                         </columns>

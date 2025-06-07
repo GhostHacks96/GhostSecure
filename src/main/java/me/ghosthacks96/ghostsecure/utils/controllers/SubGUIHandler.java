@@ -13,6 +13,7 @@ import me.ghosthacks96.ghostsecure.gui.SetPasswordGUI;
 import org.kordamp.bootstrapfx.BootstrapFX;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static me.ghosthacks96.ghostsecure.utils.controllers.Config.PASSWORD_HASH;
 
@@ -27,10 +28,10 @@ public class SubGUIHandler {
             loginStage.initModality(Modality.APPLICATION_MODAL);
             loginScene.getStylesheets().add(BootstrapFX.bootstrapFXStylesheet());
             loginStage.initStyle(StageStyle.DECORATED);
-            loginScene.getStylesheets().add(Main.class.getResource("/me/ghosthacks96/ghostsecure/dark-theme.css").toExternalForm());
+            loginScene.getStylesheets().add(Objects.requireNonNull(Main.class.getResource("/me/ghosthacks96/ghostsecure/dark-theme.css")).toExternalForm());
             loginStage.setAlwaysOnTop(true);
             loginStage.requestFocus();
-            loginStage.getIcons().add(new javafx.scene.image.Image(Main.class.getResource("/me/ghosthacks96/ghostsecure/app_icon.png").toExternalForm()));
+            loginStage.getIcons().add(new javafx.scene.image.Image(Objects.requireNonNull(Main.class.getResource("/me/ghosthacks96/ghostsecure/app_icon.png")).toExternalForm()));
 
             // Set up the login stage
             loginStage.setTitle("GhostSecure - Login");

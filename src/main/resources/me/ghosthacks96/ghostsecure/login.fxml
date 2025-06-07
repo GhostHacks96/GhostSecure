@@ -9,7 +9,7 @@
 <?import javafx.scene.effect.DropShadow?>
 <BorderPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.LoginGUI">
     <style>
-        -fx-background-color: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+        -fx-background-color: linear-gradient(to bottom right, #0a0a0a 0%, #1a1a1a 100%);
     </style>
 
     <center>
@@ -18,20 +18,18 @@
                 <Insets bottom="50" left="50" right="50" top="50" />
             </padding>
             <style>
-                -fx-background-color: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+                -fx-background-color: linear-gradient(to bottom right, #1e1e1e 0%, #2a2a2a 100%);
                 -fx-background-radius: 18;
-                -fx-border-color: rgba(0, 212, 255, 0.3);
+                -fx-border-color: #00d4ff4d;
                 -fx-border-width: 1;
                 -fx-border-radius: 18;
-                -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 25, 0, 0, 8);
+                -fx-effect: dropshadow(gaussian, #00000066, 25, 0, 0, 8);
             </style>
 
             <!-- App Icon and Title Section -->
             <VBox alignment="CENTER" spacing="25">
                 <ImageView fx:id="appIcon" fitHeight="90" fitWidth="90" preserveRatio="true">
-                    <image>
-                        <Image url="@app_icon.png" />
-                    </image>
+                    <Image url="@app_icon.png" />
                     <effect>
                         <DropShadow color="#00d4ff" radius="15" spread="0.3" />
                     </effect>
@@ -44,7 +42,7 @@
                         </font>
                         <style>
                             -fx-text-fill: #00d4ff;
-                            -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.4), 5, 0, 0, 0);
+                            -fx-effect: dropshadow(gaussian, #00d4ff66, 5, 0, 0, 0);
                         </style>
                     </Label>
 
@@ -62,7 +60,7 @@
             <!-- Input Section -->
             <VBox spacing="25" alignment="CENTER">
                 <VBox spacing="8" alignment="CENTER_LEFT">
-                    <Label text="Password" textAlignment="LEFT">
+                    <Label text="Password">
                         <font>
                             <Font name="System Bold" size="14" />
                         </font>

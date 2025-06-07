@@ -1,24 +1,16 @@
 package me.ghosthacks96.ghostsecure;
 
 // JavaFX imports
+
 import com.google.gson.JsonArray;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-
-// Application imports 
-import me.ghosthacks96.ghostsecure.gui.LoginGUI;
-import me.ghosthacks96.ghostsecure.gui.SetPasswordGUI;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
-import me.ghosthacks96.ghostsecure.utils.*;
 import me.ghosthacks96.ghostsecure.utils.controllers.*;
-import org.kordamp.bootstrapfx.BootstrapFX;
 
-// Java imports
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -32,19 +24,20 @@ public class Main extends Application {
 
     // Static components
     public static ArrayList<LockedItem> lockedItems = new ArrayList<>();
-    public static String PASSWORD_HASH;
+    public static String appDataPath = System.getenv("APPDATA") + "/ghosthacks96/GhostSecure/";
     public static Config config;
     public static Logging logger;
     public static SubGUIHandler sgh = new SubGUIHandler();
-    
+
     // UI components
     public static FXMLLoader mainLoader;
-    public static Scene mainScene; 
+    public static Scene mainScene;
     public static Stage mainStage;
 
     public static void main(String[] args) {
         logger = new Logging();
         logger.logInfo("Application started.");
+        config = new Config();
 
         launch();
     }
@@ -68,11 +61,9 @@ public class Main extends Application {
     }
 
 
-
     @Override
     public void start(Stage stage) {
         try {
-            config = new Config(this);
             if (!config.getConfigFile().exists()) {
                 config.setDefaultConfig();
 
@@ -86,8 +77,8 @@ public class Main extends Application {
                     sgh.showError("Setup Error", "Password setup is required to proceed.");
                     System.exit(1);
                 }
-                PASSWORD_HASH = hashPassword(newPassword);
-                config.getJsonConfig().addProperty("password", PASSWORD_HASH);
+                Config.PASSWORD_HASH = hashPassword(newPassword);
+                config.getJsonConfig().addProperty("password", Config.PASSWORD_HASH);
 
                 logger.logInfo("New password setup successfully.");
             } else {
@@ -110,9 +101,9 @@ public class Main extends Application {
 
             mainStage = stage;
             mainLoader = new FXMLLoader(Main.class.getResource("home.fxml"));
-            mainScene = new Scene(mainLoader.load(), 600, 500);
+            mainScene = new Scene(mainLoader.load());
             mainScene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/dark-theme.css")).toExternalForm());
-            mainStage.setTitle("App Locker");
+            mainStage.setTitle("Ghost Secure - Home");
             mainStage.setScene(mainScene);
 
             mainStage.getIcons().add(new javafx.scene.image.Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png")).toExternalForm()));

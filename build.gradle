@@ -37,7 +37,7 @@ javafx {
 
 application {
     // Specify the main module and the fully qualified main class
-    mainModule = 'me.ghosthacks96.ghostsecure'
+    mainModule = 'ghostsecure'
     mainClass = 'me.ghosthacks96.ghostsecure.Main'
 }
 

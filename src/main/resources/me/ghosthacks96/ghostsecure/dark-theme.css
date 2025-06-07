@@ -2,12 +2,12 @@
 .root {
     -fx-base: #1e1e1e;
     -fx-background: #0a0a0a;
-    -fx-control-inner-background: rgba(255, 255, 255, 0.05);
-    -fx-control-inner-background-alt: rgba(255, 255, 255, 0.03);
+    -fx-control-inner-background: #ffffff0d;
+    -fx-control-inner-background-alt: #ffffff08;
     -fx-accent: #00d4ff;
     -fx-default-button: #00d4ff;
     -fx-focus-color: #00d4ff;
-    -fx-faint-focus-color: rgba(0, 212, 255, 0.1);
+    -fx-faint-focus-color: #00d4ff1a;
     -fx-focused-text-base-color: #ffffff;
     -fx-focused-mark-color: #00d4ff;
     -fx-text-background-color: #ffffff;
@@ -29,16 +29,16 @@
 }
 
 .tab-pane .tab-header-area .tab-header-background {
-    -fx-background-color: rgba(0, 0, 0, 0.9);
-    -fx-border-color: rgba(0, 212, 255, 0.2);
+    -fx-background-color: #000000e6;
+    -fx-border-color: #00d4ff33;
     -fx-border-width: 0 0 1 0;
 }
 
 .tab-pane .tab {
-    -fx-background-color: rgba(30, 30, 30, 0.8);
+    -fx-background-color: #1e1e1ecc;
     -fx-text-fill: #b0b0b0;
     -fx-background-radius: 10 10 0 0;
-    -fx-border-color: rgba(0, 212, 255, 0.3);
+    -fx-border-color: #00d4ff4d;
     -fx-border-width: 1 1 0 1;
     -fx-border-radius: 10 10 0 0;
     -fx-padding: 12 20 12 20;
@@ -46,66 +46,66 @@
 }
 
 .tab-pane .tab:selected {
-    -fx-background-color: rgba(0, 212, 255, 0.15);
+    -fx-background-color: #00d4ff26;
     -fx-text-fill: #00d4ff;
     -fx-border-color: #00d4ff;
     -fx-border-width: 2 2 0 2;
 }
 
 .tab-pane .tab:hover {
-    -fx-background-color: rgba(0, 212, 255, 0.08);
+    -fx-background-color: #00d4ff14;
     -fx-text-fill: #ffffff;
 }
 
 /* Table View Styling */
 .table-view {
-    -fx-background-color: rgba(0, 0, 0, 0.4);
-    -fx-table-cell-border-color: rgba(0, 212, 255, 0.15);
-    -fx-table-header-border-color: rgba(0, 212, 255, 0.3);
-    -fx-border-color: rgba(0, 212, 255, 0.2);
+    -fx-background-color: #00000066;
+    -fx-table-cell-border-color: #00d4ff26;
+    -fx-table-header-border-color: #00d4ff4d;
+    -fx-border-color: #00d4ff33;
     -fx-border-width: 1;
     -fx-border-radius: 8;
     -fx-background-radius: 8;
 }
 
 .table-view .column-header {
-    -fx-background-color: rgba(0, 0, 0, 0.6);
+    -fx-background-color: #00000099;
     -fx-text-fill: #00d4ff;
-    -fx-border-color: rgba(0, 212, 255, 0.3);
+    -fx-border-color: #00d4ff4d;
     -fx-font-weight: bold;
     -fx-padding: 12 8 12 8;
 }
 
 .table-view .table-cell {
     -fx-text-fill: #ffffff;
-    -fx-border-color: rgba(0, 212, 255, 0.1);
+    -fx-border-color: #00d4ff1a;
     -fx-padding: 8;
 }
 
 .table-view .table-row-cell {
-    -fx-background-color: rgba(255, 255, 255, 0.02);
+    -fx-background-color: #ffffff05;
 }
 
 .table-view .table-row-cell:selected {
-    -fx-background-color: rgba(0, 212, 255, 0.25);
+    -fx-background-color: #00d4ff40;
     -fx-text-fill: #ffffff;
 }
 
 .table-view .table-row-cell:hover {
-    -fx-background-color: rgba(0, 212, 255, 0.1);
+    -fx-background-color: #00d4ff1a;
 }
 
 /* Button Base Styling */
 .button {
     -fx-cursor: hand;
     -fx-font-weight: bold;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, #0000004d, 4, 0, 0, 2);
 }
 
 .button:hover {
     -fx-scale-x: 1.02;
     -fx-scale-y: 1.02;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 6, 0, 0, 3);
+    -fx-effect: dropshadow(gaussian, #00000066, 6, 0, 0, 3);
 }
 
 .button:pressed {
@@ -115,57 +115,57 @@
 
 /* Primary Button (Cyan/Blue) */
 .button.primary {
-    -fx-background-color: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    -fx-background-color: linear-gradient(to bottom right, #00d4ff 0%, #0099cc 100%);
     -fx-text-fill: #000000;
     -fx-background-radius: 8;
 }
 
 .button.primary:hover {
-    -fx-background-color: linear-gradient(135deg, #1ae0ff 0%, #00aadd 100%);
-    -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.4), 8, 0, 0, 3);
+    -fx-background-color: linear-gradient(to bottom right, #1ae0ff 0%, #00aadd 100%);
+    -fx-effect: dropshadow(gaussian, #00d4ff66, 8, 0, 0, 3);
 }
 
 /* Success Button (Green) */
 .button.success {
-    -fx-background-color: linear-gradient(135deg, #2ed573 0%, #1e824c 100%);
+    -fx-background-color: linear-gradient(to bottom right, #2ed573 0%, #1e824c 100%);
     -fx-text-fill: #ffffff;
     -fx-background-radius: 8;
 }
 
 .button.success:hover {
-    -fx-background-color: linear-gradient(135deg, #3ee683 0%, #2e925c 100%);
-    -fx-effect: dropshadow(gaussian, rgba(46, 213, 115, 0.4), 8, 0, 0, 3);
+    -fx-background-color: linear-gradient(to bottom right, #3ee683 0%, #2e925c 100%);
+    -fx-effect: dropshadow(gaussian, #2ed57366, 8, 0, 0, 3);
 }
 
 /* Danger Button (Red) */
 .button.danger {
-    -fx-background-color: linear-gradient(135deg, #ff4757 0%, #c44569 100%);
+    -fx-background-color: linear-gradient(to bottom right, #ff4757 0%, #c44569 100%);
     -fx-text-fill: #ffffff;
     -fx-background-radius: 8;
 }
 
 .button.danger:hover {
-    -fx-background-color: linear-gradient(135deg, #ff5767 0%, #d45579 100%);
-    -fx-effect: dropshadow(gaussian, rgba(255, 71, 87, 0.4), 8, 0, 0, 3);
+    -fx-background-color: linear-gradient(to bottom right, #ff5767 0%, #d45579 100%);
+    -fx-effect: dropshadow(gaussian, #ff475766, 8, 0, 0, 3);
 }
 
 /* Warning Button (Orange) */
 .button.warning {
-    -fx-background-color: linear-gradient(135deg, #ffa502 0%, #ff6348 100%);
+    -fx-background-color: linear-gradient(to bottom right, #ffa502 0%, #ff6348 100%);
     -fx-text-fill: #ffffff;
     -fx-background-radius: 8;
 }
 
 .button.warning:hover {
-    -fx-background-color: linear-gradient(135deg, #ffb512 0%, #ff7358 100%);
-    -fx-effect: dropshadow(gaussian, rgba(255, 165, 2, 0.4), 8, 0, 0, 3);
+    -fx-background-color: linear-gradient(to bottom right, #ffb512 0%, #ff7358 100%);
+    -fx-effect: dropshadow(gaussian, #ffa50266, 8, 0, 0, 3);
 }
 
 /* Text Field and Password Field Styling */
 .text-field, .password-field {
-    -fx-background-color: rgba(255, 255, 255, 0.05);
+    -fx-background-color: #ffffff0d;
     -fx-background-radius: 8;
-    -fx-border-color: rgba(0, 212, 255, 0.3);
+    -fx-border-color: #00d4ff4d;
     -fx-border-radius: 8;
     -fx-border-width: 1;
     -fx-text-fill: #ffffff;
@@ -177,13 +177,13 @@
 .text-field:focused, .password-field:focused {
     -fx-border-color: #00d4ff;
     -fx-border-width: 2;
-    -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.3), 5, 0, 0, 0);
-    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-effect: dropshadow(gaussian, #00d4ff4d, 5, 0, 0, 0);
+    -fx-background-color: #ffffff14;
 }
 
 /* Status Label Styling */
 .status-label {
-    -fx-background-color: rgba(0, 212, 255, 0.15);
+    -fx-background-color: #00d4ff26;
     -fx-background-radius: 15;
     -fx-padding: 6 14;
     -fx-text-fill: #00d4ff;
@@ -193,10 +193,10 @@
 /* Error Label Styling */
 .error-label {
     -fx-text-fill: #ff4757;
-    -fx-background-color: rgba(255, 71, 87, 0.15);
+    -fx-background-color: #ff475726;
     -fx-background-radius: 8;
     -fx-padding: 12 16;
-    -fx-border-color: rgba(255, 71, 87, 0.3);
+    -fx-border-color: #ff47574d;
     -fx-border-radius: 8;
     -fx-border-width: 1;
 }
@@ -204,10 +204,10 @@
 /* Warning Label Styling */
 .warning-label {
     -fx-text-fill: #ffa502;
-    -fx-background-color: rgba(255, 165, 2, 0.15);
+    -fx-background-color: #ffa50226;
     -fx-background-radius: 8;
     -fx-padding: 10 14;
-    -fx-border-color: rgba(255, 165, 2, 0.3);
+    -fx-border-color: #ffa5024d;
     -fx-border-radius: 8;
     -fx-border-width: 1;
 }

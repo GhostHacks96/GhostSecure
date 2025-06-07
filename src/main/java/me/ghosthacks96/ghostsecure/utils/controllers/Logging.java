@@ -1,5 +1,7 @@
 package me.ghosthacks96.ghostsecure.utils.controllers;
 
+import me.ghosthacks96.ghostsecure.Main;
+
 import java.io.*;
 import java.nio.file.*;
 import java.time.LocalDateTime;
@@ -9,7 +11,7 @@ import java.util.zip.*;
 
 public class Logging {
 
-    private static final String LOG_DIR = System.getenv("APPDATA") + "/ghosthacks96/logs/";
+    private static final String LOG_DIR = Main.appDataPath+"logs/";
     private static final String CURRENT_LOG_FILE = LOG_DIR + "latest.log";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yy");
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -120,7 +122,7 @@ public class Logging {
                         e.printStackTrace();
                     }
                 });
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

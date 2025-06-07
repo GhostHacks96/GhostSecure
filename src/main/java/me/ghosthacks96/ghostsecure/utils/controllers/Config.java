@@ -3,65 +3,84 @@ package me.ghosthacks96.ghostsecure.utils.controllers;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.stream.JsonReader;
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
+import me.ghosthacks96.ghostsecure.utils.EncryptionUtils;
 
+import javax.crypto.SecretKey;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Config {
 
-    Main main;
-
-    public static String appDataPath = System.getenv("APPDATA") + "/ghosthacks96/GhostSecure/";
+    private static final String SALT_FILE = "key.salt";
+    private static final String CONFIG_FILE = "config.json.enc";
     public static JsonObject config;
     public static String PASSWORD_HASH = "";
     public static Gson gson = new Gson();
     public static Logging logger;
-
     public static List<LockedItem> lockedItems = new ArrayList<>();
+    // Encryption components
+    private static SecretKey encryptionKey;
+    private static byte[] keySalt;
 
-    public Config(Main main) {
-        this.main = main;
+    public Config() {
         logger = Main.logger;
+        initializeEncryption();
     }
 
-    public JsonObject getJsonConfig() {
-        return config;
-    }
+    /**
+     * Initialize encryption key based on user information
+     */
+    private static void initializeEncryption() {
+        try {
+            String username = System.getProperty("user.name");
+            String systemInfo = EncryptionUtils.getSystemInfo();
 
-    public File getConfigFile() {
-        return new File(appDataPath + "config.json");
-    }
-    public void setDefaultConfig()  throws Exception{
-        config = new JsonObject();
-        config.addProperty("mode", "unlock");
-        config.add("programs", new JsonArray());
-        config.add("folders", new JsonArray());
-        config.addProperty("password", "");
-        lockedItems.clear();
-        saveConfig();
-        logger.logInfo("Default config created successfully.");
+            File saltFile = new File(Main.appDataPath + SALT_FILE);
 
-        if(!new File(appDataPath).exists()) {
-            if(!new File(appDataPath).mkdirs()) {
-                throw new IOException("Failed to create AppData directory");
+            // Load or create salt
+            if (saltFile.exists()) {
+                keySalt = Files.readAllBytes(saltFile.toPath());
+            } else {
+                keySalt = EncryptionUtils.generateSalt();
+                // Create directory if it doesn't exist
+                File appDataDir = new File(Main.appDataPath);
+                if (!appDataDir.exists()) {
+                    appDataDir.mkdirs();
+                }
+                Files.write(saltFile.toPath(), keySalt);
+                logger.logInfo("New encryption salt created.");
             }
-            if(!new File(appDataPath + "config.json").createNewFile()) {
-                throw new IOException("Failed to create config file");
-            }
-            logger.logInfo("Default config file created successfully.");
+
+            // Derive encryption key from user info
+            encryptionKey = EncryptionUtils.deriveKeyFromUserInfo(username, systemInfo, keySalt);
+            logger.logInfo("Encryption initialized successfully.");
+
+        } catch (Exception e) {
+            logger.logError("Failed to initialize encryption: " + e.getMessage());
+            throw new RuntimeException("Encryption initialization failed", e);
         }
     }
 
     public static void loadConfig(boolean service) {
         try {
-            config = gson.fromJson(new JsonReader(new FileReader(appDataPath + "config.json")), JsonObject.class);
+            File configFile = new File(Main.appDataPath + CONFIG_FILE);
+
+            if (!configFile.exists()) {
+                if (!service) logger.logWarning("No config file found. A new setup will be required.");
+                return;
+            }
+
+            // Read and decrypt config file
+            String encryptedContent = Files.readString(configFile.toPath());
+            String decryptedContent = EncryptionUtils.decrypt(encryptedContent, encryptionKey);
+
+            // Parse JSON from decrypted content
+            config = gson.fromJson(decryptedContent, JsonObject.class);
 
             if (config.has("password")) {
                 PASSWORD_HASH = config.get("password").getAsString();
@@ -70,18 +89,24 @@ public class Config {
             if (!config.has("mode")) {
                 config.addProperty("mode", "unlock");
             }
+
             loadLockedItemsFromConfig(service);
 
-            if(!service)logger.logInfo("Config loaded successfully.");
+            if (!service) logger.logInfo("Encrypted config loaded successfully.");
+
         } catch (Exception e) {
-            if(!service)logger.logWarning("No config file found. A new setup will be required.");
+            if (!service) {
+                logger.logWarning("Failed to load config file: " + e.getMessage());
+                logger.logWarning("A new setup will be required.");
+            }
             e.printStackTrace();
         }
     }
 
     private static void loadLockedItemsFromConfig(boolean service) {
         try {
-            if(!lockedItems.isEmpty()) lockedItems.clear();
+            if (!lockedItems.isEmpty()) lockedItems.clear();
+
             if (config.has("programs")) {
                 JsonArray programs = config.getAsJsonArray("programs");
                 for (int i = 0; i < programs.size(); i++) {
@@ -97,22 +122,20 @@ public class Config {
                     lockedItems.add(parseLockedItem(folderEntry));
                 }
             }
-            if(!service)logger.logInfo("Locked items loaded successfully from config.");
+
+            if (!service) logger.logInfo("Locked items loaded successfully from encrypted config.");
+
         } catch (Exception e) {
             logger.logError("Error loading locked items from config: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
     public static void printConfig() {
         if (config != null) {
-            // Convert the JsonObject to a formatted JSON string
             String configJson = gson.toJson(config);
-
-            // Print the JSON string
             System.out.println("Current Config Data:");
             System.out.println(configJson);
-
-            // Optional: Log it using your logger
             logger.logInfo("Current Config Data: " + configJson);
         } else {
             System.out.println("Config object is null. No data to display.");
@@ -123,7 +146,6 @@ public class Config {
     private static boolean containsItem(JsonArray jsonArray, String path) {
         for (int i = 0; i < jsonArray.size(); i++) {
             String existingEntry = jsonArray.get(i).getAsString();
-            // Compare only the raw path part (before `[::]`)
             if (existingEntry.startsWith(path + "[::]")) {
                 return true;
             }
@@ -131,13 +153,11 @@ public class Config {
         return false;
     }
 
-
     public static void saveConfig() {
         try {
             JsonArray programsArray = config.getAsJsonArray("programs");
             JsonArray foldersArray = config.getAsJsonArray("folders");
 
-            // Ensure "programs" and "folders" arrays exist in the config
             if (programsArray == null) {
                 programsArray = new JsonArray();
                 config.add("programs", programsArray);
@@ -146,39 +166,41 @@ public class Config {
                 foldersArray = new JsonArray();
                 config.add("folders", foldersArray);
             }
-            for (LockedItem item : lockedItems) {
 
-                // Determine the formatted string for the item
+            // Clear arrays to rebuild them
+            programsArray = new JsonArray();
+            foldersArray = new JsonArray();
+            config.add("programs", programsArray);
+            config.add("folders", foldersArray);
+
+            for (LockedItem item : lockedItems) {
                 String formattedPath = item.getPath() + "[::]" + (item.isLocked() ? "locked" : "unlocked");
 
                 if (item.getName().contains(".exe")) {
-                    // If the item is a program, check if it's already in "programs" and add only if it's not
-                    if (!containsItem(programsArray, item.getPath())) {
-                        programsArray.add(formattedPath);
-                    }
+                    programsArray.add(formattedPath);
                 } else {
-                    // If the item is a folder, check if it's already in "folders" and add only if it's not
-                    if (!containsItem(foldersArray, item.getPath())) {
-                        foldersArray.add(formattedPath);
-                    }
+                    foldersArray.add(formattedPath);
                 }
             }
 
-            File appDataDir = new File(appDataPath);
+            File appDataDir = new File(Main.appDataPath);
             if (!appDataDir.exists() && !appDataDir.mkdirs()) {
                 throw new IOException("Failed to create AppData directory");
             }
 
-            File configFile = new File(appDataDir, "config.json");
-            printConfig();
+            File configFile = new File(appDataDir, CONFIG_FILE);
 
-            try (FileWriter writer = new FileWriter(configFile)) {
+            // Convert config to JSON and encrypt it
+            String jsonString = gson.toJson(config);
+            String encryptedContent = EncryptionUtils.encrypt(jsonString, encryptionKey);
 
-                writer.write(gson.toJson(config));
-                logger.logInfo("Config saved successfully.");
-            }
+            // Write encrypted content to file
+            Files.writeString(configFile.toPath(), encryptedContent);
+
+            logger.logInfo("Encrypted config saved successfully.");
+
         } catch (Exception e) {
-            logger.logError("Error saving config file: " + e.getMessage());
+            logger.logError("Error saving encrypted config file: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException(e);
         }
@@ -186,7 +208,7 @@ public class Config {
 
     private static LockedItem parseLockedItem(String input) {
         try {
-            String[] parts = input.split("\\[::\\]");
+            String[] parts = input.split("\\[::]");
             if (parts.length != 2) {
                 throw new IllegalArgumentException("Invalid format for locked item: " + input);
             }
@@ -201,4 +223,30 @@ public class Config {
         }
     }
 
+    public JsonObject getJsonConfig() {
+        return config;
+    }
+
+    public File getConfigFile() {
+        return new File(Main.appDataPath + CONFIG_FILE);
+    }
+
+    public void setDefaultConfig() throws Exception {
+        config = new JsonObject();
+        config.addProperty("mode", "unlock");
+        config.add("programs", new JsonArray());
+        config.add("folders", new JsonArray());
+        config.addProperty("password", "");
+        lockedItems.clear();
+        saveConfig();
+        logger.logInfo("Default config created successfully.");
+
+        File appDataDir = new File(Main.appDataPath);
+        if (!appDataDir.exists()) {
+            if (!appDataDir.mkdirs()) {
+                throw new IOException("Failed to create AppData directory");
+            }
+            logger.logInfo("AppData directory created successfully.");
+        }
+    }
 }
