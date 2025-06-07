@@ -28,7 +28,7 @@ public class Config {
 
     public Config(Main main) {
         this.main = main;
-        logger = main.logger;
+        logger = Main.logger;
     }
 
     public JsonObject getJsonConfig() {

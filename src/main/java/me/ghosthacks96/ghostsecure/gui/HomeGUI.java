@@ -1,55 +1,55 @@
 package me.ghosthacks96.ghostsecure.gui;
 
+// JavaFX imports
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
+// Application imports
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
+import me.ghosthacks96.ghostsecure.utils.controllers.Config;
+import me.ghosthacks96.ghostsecure.utils.controllers.ServiceController;
 
+// Java imports
 import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static me.ghosthacks96.ghostsecure.Main.logger;
 
-public class homeGUI {
+/**
+ * Main application GUI controller handling the home screen functionality
+ */
+public class HomeGUI {
 
-    private static ObservableList<LockedItem> folderItems = FXCollections.observableArrayList();
-    private static ObservableList<LockedItem> programItems = FXCollections.observableArrayList();
+    // UI Components
+    @FXML private Button startServiceButton;
+    @FXML private Button stopServiceButton;
+    @FXML private Label lockStatus;
+    
+    // Table components - Folders
+    @FXML private TableView<LockedItem> folderTable;
+    @FXML private TableColumn<LockedItem, Boolean> folderCheckBox;
+    @FXML private TableColumn<LockedItem, String> folderNameColumn;
+    @FXML private TableColumn<LockedItem, String> folderPathColumn;
+    @FXML private TableColumn<LockedItem, Boolean> folderStatusColumn;
+    
+    // Table components - Programs  
+    @FXML private TableView<LockedItem> programTable;
+    @FXML private TableColumn<LockedItem, Boolean> programCheckBox;
+    @FXML private TableColumn<LockedItem, Boolean> programActionColumn;
+    @FXML private TableColumn<LockedItem, String> programPathColumn;
 
-    @FXML
-    private Button startServiceButton;
-    @FXML
-    private Button stopServiceButton;
-    @FXML
-    private Label lockStatus;
-    @FXML
-    private TableView<LockedItem> folderTable;
-    @FXML
-    private TableView<LockedItem> programTable;
-    @FXML
-    private TableColumn<LockedItem, Boolean> folderCheckBox;
-    @FXML
-    private TableColumn<LockedItem, String> folderNameColumn;
-    @FXML
-    private TableColumn<LockedItem, String> folderPathColumn;
-    @FXML
-    private TableColumn<LockedItem, Boolean> folderStatusColumn;
-    @FXML
-    private TableColumn<LockedItem, Boolean> programCheckBox;
-    @FXML
-    private TableColumn<LockedItem, Boolean> programActionColumn;
-    @FXML
-    private TableColumn<LockedItem, String> programPathColumn;
+    // Observable lists for table data
+    private static final ObservableList<LockedItem> folderItems = FXCollections.observableArrayList();
+    private static final ObservableList<LockedItem> programItems = FXCollections.observableArrayList();
 
     public static void refreshTableData() {
         logger.logInfo("Refreshing table data.");
@@ -113,7 +113,7 @@ public class homeGUI {
         if (selectedDirectory != null) {
             LockedItem lockedFolder = new LockedItem(selectedDirectory.getAbsolutePath(), selectedDirectory.getName(), true);
             Main.lockedItems.add(lockedFolder);
-            Main.config.saveConfig();
+            Config.saveConfig();
             refreshTableData();
             logger.logInfo("Added folder: " + selectedDirectory.getName());
         } else {
@@ -126,7 +126,7 @@ public class homeGUI {
         logger.logInfo("Removing selected folders.");
         List<LockedItem> selectedFolders = folderItems.stream().filter(LockedItem::isSelected).toList();
         Main.lockedItems.removeAll(selectedFolders);
-        Main.config.saveConfig();
+        Config.saveConfig();
         refreshTableData();
         selectedFolders.forEach(item -> logger.logInfo("Removed folder: " + item.getName()));
     }
@@ -141,7 +141,7 @@ public class homeGUI {
         if (selectedFile != null) {
             LockedItem lockedProgram = new LockedItem(selectedFile.getAbsolutePath(), selectedFile.getName(), true);
             Main.lockedItems.add(lockedProgram);
-            Main.config.saveConfig();
+            Config.saveConfig();
             refreshTableData();
             logger.logInfo("Added program: " + selectedFile.getName());
         } else {
@@ -154,7 +154,7 @@ public class homeGUI {
         logger.logInfo("Removing selected programs.");
         List<LockedItem> selectedPrograms = programItems.stream().filter(LockedItem::isSelected).toList();
         Main.lockedItems.removeAll(selectedPrograms);
-        Main.config.saveConfig();
+        Config.saveConfig();
         refreshTableData();
         selectedPrograms.forEach(item -> logger.logInfo("Removed program: " + item.getName()));
     }
@@ -167,7 +167,7 @@ public class homeGUI {
             Main.config.getJsonConfig().remove("mode");
             Main.config.getJsonConfig().addProperty("mode", "lock");
         }
-        Main.config.saveConfig();
+        Config.saveConfig();
         Platform.runLater(() -> updateServiceStatus());
         logger.logInfo("Locking service started.");
     }
@@ -179,22 +179,22 @@ public class homeGUI {
             Main.config.getJsonConfig().remove("mode");
             Main.config.getJsonConfig().addProperty("mode", "unlock");
         }
-        Main.config.saveConfig();
+        Config.saveConfig();
         Platform.runLater(() -> updateServiceStatus());
         logger.logInfo("Locking service stopped.");
     }
 
 
     public void updateServiceStatus() {
-        boolean isRunning = Main.sc.isServiceRunning();
+        boolean isRunning = ServiceController.isServiceRunning();
         logger.logInfo("Updating service status to " + (isRunning ? "RUNNING" : "STOPPED"));
         if (isRunning) {
             startServiceButton.setDisable(true);
             stopServiceButton.setDisable(false);
             lockStatus.setText("Locking Engaged");
             lockStatus.setTextFill(javafx.scene.paint.Color.GREEN);
-            if (!Main.sc.isServiceRunning()) {
-                Main.sc.startBlockerDaemon();
+            if (!ServiceController.isServiceRunning()) {
+                ServiceController.startBlockerDaemon();
             }
         } else {
             startServiceButton.setDisable(false);
@@ -212,7 +212,7 @@ public class homeGUI {
             item.setSelected(false);
             logger.logInfo("Toggled lock status for folder: " + item.getName());
         });
-        Main.config.saveConfig();
+        Config.saveConfig();
         refreshTableData();
     }
 
@@ -224,7 +224,7 @@ public class homeGUI {
             item.setSelected(false);
             logger.logInfo("Toggled lock status for program: " + item.getName());
         });
-        Main.config.saveConfig();
+        Config.saveConfig();
         refreshTableData();
     }
 }

@@ -4,8 +4,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import me.ghosthacks96.ghostsecure.Main;
-import me.ghosthacks96.ghostsecure.gui.homeGUI;
-import me.ghosthacks96.ghostsecure.utils.PopUps;
+import me.ghosthacks96.ghostsecure.gui.HomeGUI;
 
 import java.awt.*;
 
@@ -38,16 +37,16 @@ public class SystemTrayIntegration {
         MenuItem restoreItem = new MenuItem("Open GUI");
         restoreItem.addActionListener(e -> Platform.runLater(() -> {
             if (primaryStage != null) {
-                if (Main.openLoginScene()) {
+                if (Main.sgh.openLoginScene()) {
                     Platform.runLater(() -> {
                         FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
-                        homeGUI controller = loader.getController();
+                        HomeGUI controller = loader.getController();
                         controller.updateServiceStatus();
                     });
                     primaryStage.show();
                     primaryStage.toFront();
                 } else {
-                    PopUps.showError("No", "Are you sure you're supposed to be messing with this?");
+                    Main.sgh.showError("No", "Are you sure you're supposed to be messing with this?");
                 }
             }
         }));
@@ -55,48 +54,48 @@ public class SystemTrayIntegration {
 
         MenuItem starterItem = new MenuItem("Start Service");
         starterItem.addActionListener(e -> Platform.runLater(() -> {
-            if (!Main.sc.isServiceRunning()) {
-                if (Main.openLoginScene()) {
+            if (!ServiceController.isServiceRunning()) {
+                if (Main.sgh.openLoginScene()) {
                     logger.logInfo("Starting locking service.");
                     if (Main.config.getJsonConfig().get("mode").getAsString().equals("unlock")) {
                         Main.config.getJsonConfig().remove("mode");
                         Main.config.getJsonConfig().addProperty("mode", "lock");
                     }
-                    Main.config.saveConfig();
+                    Config.saveConfig();
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
-                    homeGUI controller = loader.getController();
+                    HomeGUI controller = loader.getController();
                     controller.updateServiceStatus();
                     logger.logInfo("Locking service started.");
                 } else {
-                    PopUps.showError("No", "Are you sure you're supposed to be messing with this?");
+                    Main.sgh.showError("No", "Are you sure you're supposed to be messing with this?");
                 }
             } else {
-                PopUps.showWarning("Already Running", "The service is already running. If you want to stop it, please use the stop button.");
+                Main.sgh.showWarning("Already Running", "The service is already running. If you want to stop it, please use the stop button.");
                 Main.logger.logWarning("Start requested, but the service is already running.");
             }
         }));
 
         MenuItem stopperItem = new MenuItem("Stop Service");
         stopperItem.addActionListener(e -> Platform.runLater(() -> {
-            if (Main.sc.isServiceRunning()) {
-                if (Main.openLoginScene()) {
+            if (ServiceController.isServiceRunning()) {
+                if (Main.sgh.openLoginScene()) {
                     logger.logInfo("Stopping locking service.");
                     if (Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
                         Main.config.getJsonConfig().remove("mode");
                         Main.config.getJsonConfig().addProperty("mode", "unlock");
                     }
-                    Main.config.saveConfig();
+                    Config.saveConfig();
                     Platform.runLater(() -> {
                         FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
-                        homeGUI controller = loader.getController();
+                        HomeGUI controller = loader.getController();
                         controller.updateServiceStatus();
                     });
                     logger.logInfo("Locking service stopped.");
                 } else {
-                    PopUps.showError("No", "Are you sure you're supposed to be messing with this?");
+                    Main.sgh.showError("No", "Are you sure you're supposed to be messing with this?");
                 }
             } else {
-                PopUps.showWarning("Not Running", "The service is not running. If you want to start it, please use the start button.");
+                Main.sgh.showWarning("Not Running", "The service is not running. If you want to start it, please use the start button.");
                 Main.logger.logWarning("Stop requested, but the service is not running.");
             }
         }));
@@ -107,14 +106,14 @@ public class SystemTrayIntegration {
         // Exit menu item
         MenuItem exitItem = new MenuItem("Exit");
         exitItem.addActionListener(e -> Platform.runLater(() -> {
-            if (Main.openLoginScene()) {
-                while (Main.sc.killDaemon()) {
+            if (Main.sgh.openLoginScene()) {
+                while (ServiceController.killDaemon()) {
                     // Loop until the service is fully shut down
                 }
                 Main.logger.onShutdown();
                 System.exit(0);
             } else {
-                PopUps.showError("No", "Are you sure you're supposed to be messing with this?");
+                Main.sgh.showError("No", "Are you sure you're supposed to be messing with this?");
             }
         }));
         popupMenu.add(exitItem);
@@ -135,7 +134,7 @@ public class SystemTrayIntegration {
         primaryStage.setOnCloseRequest(event -> {
             event.consume();
             Platform.runLater(primaryStage::hide);
-            PopUps.showInfo("Minimized to System Tray", "ghostsecure is minimized to the system tray. You can restore it by using the open GUI button in the tray icon menu.");
+            Main.sgh.showInfo("Minimized to System Tray", "ghostsecure is minimized to the system tray. You can restore it by using the open GUI button in the tray icon menu.");
         });
     }
 }

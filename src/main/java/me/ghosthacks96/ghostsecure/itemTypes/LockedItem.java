@@ -10,7 +10,7 @@ public class LockedItem {
     private final StringProperty path; // Represents the path
     private final StringProperty name; // Represents the name
     private final BooleanProperty isLocked; // Represents the lock state
-    private BooleanProperty selected;
+    private final BooleanProperty selected;
 
     public LockedItem(String path, String name, boolean isLocked) {
         this.path = new SimpleStringProperty(path);

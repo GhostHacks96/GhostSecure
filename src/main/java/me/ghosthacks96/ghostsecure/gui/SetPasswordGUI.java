@@ -6,7 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.stage.Stage;
 
-public class SetPassword_GUI {
+public class SetPasswordGUI {
 
     @FXML
     private PasswordField passwordField;

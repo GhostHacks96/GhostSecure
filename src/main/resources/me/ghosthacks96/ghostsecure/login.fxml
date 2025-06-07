@@ -7,110 +7,88 @@
 <?import javafx.scene.text.*?>
 
 <?import javafx.scene.effect.DropShadow?>
-<BorderPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.Login_GUI">
+<BorderPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.LoginGUI">
     <style>
-        -fx-background-color: linear-gradient(to bottom, #000000, #1a1a1a);
+        -fx-background-color: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
     </style>
 
     <center>
-        <VBox alignment="CENTER" spacing="30" maxWidth="450" maxHeight="600">
+        <VBox alignment="CENTER" spacing="35" maxWidth="480" maxHeight="650">
             <padding>
                 <Insets bottom="50" left="50" right="50" top="50" />
             </padding>
             <style>
-                -fx-background-color: linear-gradient(135deg, #222222 0%, #333333 100%);
-                -fx-background-radius: 15;
-                -fx-border-color: rgba(0, 255, 255, 0.3);
+                -fx-background-color: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+                -fx-background-radius: 18;
+                -fx-border-color: rgba(0, 212, 255, 0.3);
                 -fx-border-width: 1;
-                -fx-border-radius: 15;
-                -fx-effect: dropshadow(gaussian, rgba(0, 255, 255, 0.1), 20, 0, 0, 5);
+                -fx-border-radius: 18;
+                -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 25, 0, 0, 8);
             </style>
 
             <!-- App Icon and Title Section -->
-            <VBox alignment="CENTER" spacing="20">
-                <ImageView fx:id="appIcon" fitHeight="80" fitWidth="80" preserveRatio="true">
+            <VBox alignment="CENTER" spacing="25">
+                <ImageView fx:id="appIcon" fitHeight="90" fitWidth="90" preserveRatio="true">
                     <image>
                         <Image url="@app_icon.png" />
                     </image>
                     <effect>
-                        <DropShadow color="#00ffff" radius="10" spread="0.3" />
+                        <DropShadow color="#00d4ff" radius="15" spread="0.3" />
                     </effect>
                 </ImageView>
 
-                <Label text="App Locker" textAlignment="CENTER">
-                    <font>
-                        <Font name="System Bold" size="28" />
-                    </font>
-                    <style>
-                        -fx-text-fill: #00ffff;
-                        -fx-effect: dropshadow(gaussian, rgba(0, 255, 255, 0.5), 5, 0, 0, 0);
-                    </style>
-                </Label>
+                <VBox alignment="CENTER" spacing="8">
+                    <Label text="App Locker" textAlignment="CENTER">
+                        <font>
+                            <Font name="System Bold" size="32" />
+                        </font>
+                        <style>
+                            -fx-text-fill: #00d4ff;
+                            -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.4), 5, 0, 0, 0);
+                        </style>
+                    </Label>
 
-                <Label text="Secure Access Control" textAlignment="CENTER">
-                    <font>
-                        <Font size="16" />
-                    </font>
-                    <style>
-                        -fx-text-fill: #cccccc;
-                    </style>
-                </Label>
+                    <Label text="Secure Access Control" textAlignment="CENTER">
+                        <font>
+                            <Font size="16" />
+                        </font>
+                        <style>
+                            -fx-text-fill: #b0b0b0;
+                        </style>
+                    </Label>
+                </VBox>
             </VBox>
 
             <!-- Input Section -->
-            <VBox spacing="20" alignment="CENTER">
-                <VBox spacing="5">
+            <VBox spacing="25" alignment="CENTER">
+                <VBox spacing="8" alignment="CENTER_LEFT">
                     <Label text="Password" textAlignment="LEFT">
                         <font>
-                            <Font name="System Bold" size="12" />
+                            <Font name="System Bold" size="14" />
                         </font>
                         <style>
-                            -fx-text-fill: #00ffff;
+                            -fx-text-fill: #00d4ff;
                         </style>
                     </Label>
-                    <PasswordField fx:id="passwordField" promptText="Enter your password" prefWidth="320" prefHeight="45">
-                        <style>
-                            -fx-background-color: rgba(0, 0, 0, 0.3);
-                            -fx-background-radius: 8;
-                            -fx-border-color: rgba(0, 255, 255, 0.3);
-                            -fx-border-radius: 8;
-                            -fx-border-width: 1;
-                            -fx-text-fill: white;
-                            -fx-prompt-text-fill: #666666;
-                            -fx-padding: 12 16;
-                            -fx-font-size: 14;
-                        </style>
+                    <PasswordField fx:id="passwordField" promptText="Enter your password" prefWidth="350" prefHeight="50">
+                        <font>
+                            <Font size="14" />
+                        </font>
                     </PasswordField>
                 </VBox>
 
-                <Button fx:id="submitButton" onAction="#onSubmitButtonClick" text="UNLOCK" prefWidth="320" prefHeight="50">
+                <Button fx:id="submitButton" onAction="#onSubmitButtonClick" text="UNLOCK" prefWidth="350" prefHeight="55" styleClass="primary">
                     <font>
                         <Font name="System Bold" size="16" />
                     </font>
-                    <style>
-                        -fx-background-color: linear-gradient(135deg, #00ffff 0%, #0099cc 100%);
-                        -fx-text-fill: #000000;
-                        -fx-background-radius: 8;
-                        -fx-cursor: hand;
-                        -fx-effect: dropshadow(gaussian, rgba(0, 255, 255, 0.4), 8, 0, 0, 3);
-                    </style>
                 </Button>
             </VBox>
 
             <!-- Error Message -->
-            <Label fx:id="errorLabel" textAlignment="CENTER" wrapText="true" maxWidth="320" visible="false">
+            <Label fx:id="errorLabel" textAlignment="CENTER" wrapText="true" maxWidth="350" visible="false" styleClass="error-label">
                 <font>
                     <Font size="13" />
                 </font>
-                <style>
-                    -fx-text-fill: #ff4757;
-                    -fx-background-color: rgba(255, 71, 87, 0.15);
-                    -fx-background-radius: 6;
-                    -fx-padding: 12 16;
-                    -fx-border-color: rgba(255, 71, 87, 0.3);
-                    -fx-border-radius: 6;
-                    -fx-border-width: 1;
-                </style>
             </Label>
         </VBox>
     </center>
@@ -119,11 +97,11 @@
     <bottom>
         <HBox alignment="CENTER">
             <padding>
-                <Insets bottom="25" />
+                <Insets bottom="30" />
             </padding>
             <Label text="© 2025 GhostHacks96 - Secure Access Control">
                 <font>
-                    <Font size="11" />
+                    <Font size="12" />
                 </font>
                 <style>
                     -fx-text-fill: #666666;
