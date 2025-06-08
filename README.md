@@ -40,6 +40,7 @@ graph TD
 | **3️⃣** | **Enable Protection** | Start the locking service to activate protection |
 | **3️⃣** | **Disable Protection** | Stop the locking service to deactivate protection (Single Folder/Program protection disabling is avalible)|
 | **4️⃣** | **Background Operation** | Application minimizes to system tray and runs silently |
+| **4️⃣** | **Auto Updating** | Application check with an API to verify the current version if a newer release is out it autoupdates. |
 
 ## ✨ Key Features
 
@@ -141,15 +142,10 @@ graph LR
 
 </div>
 
-**GhostSecure** is a standalone desktop application built in java for Windows, Follow these steps to get started:
-
+**GhostSecure** is a standalone desktop application built in java for Windows, Download the installer for easier setup, or join our discord for manual installation instructions.:
+### **Instilation**
 **[📦 Download The Installer](https://ghosthacks96.me/downloads/GhostSecureInstaller.exe)**
 
-### 📋 ** Manual Installation Checklist**
-- [ ] **1️⃣** Download the latest release from the repository
-- [ ] **2️⃣** Extract the Zip into "%appdata%\ghosthacks96\<extract here>  
-- [ ] **3️⃣** Run the application
-- [ ] **4️⃣** Complete the initial password setup when prompted
 
 <div align="center">
 
@@ -157,7 +153,7 @@ graph LR
 
 | Version | Size | Platform | Status |
 |---------|------|----------|---------|
-| ![Latest](https://img.shields.io/badge/Latest-v2.1.0-brightgreen) | `~15MB` | Windows | ![Stable](https://img.shields.io/badge/Status-Stable-success) |
+| ![Latest](https://img.shields.io/badge/Latest-v2.2.1-brightgreen) | `~15MB` | Windows | ![Stable](https://img.shields.io/badge/Status-Stable-success) |
 
 ---
 
