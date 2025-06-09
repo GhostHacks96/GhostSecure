@@ -18,13 +18,15 @@ import java.util.Objects;
 import static me.ghosthacks96.ghostsecure.utils.controllers.Config.PASSWORD_HASH;
 
 public class SubGUIHandler {
-
+    public String loginError;
     public boolean openLoginScene() {
         try {
             // Load the Login GUI
             FXMLLoader loginLoader = new FXMLLoader(Main.class.getResource("login.fxml"));
             Stage loginStage = new Stage();
             Scene loginScene = new Scene(loginLoader.load());
+
+
             loginStage.initModality(Modality.APPLICATION_MODAL);
             loginScene.getStylesheets().add(BootstrapFX.bootstrapFXStylesheet());
             loginStage.initStyle(StageStyle.DECORATED);
@@ -36,6 +38,10 @@ public class SubGUIHandler {
             // Set up the login stage
             loginStage.setTitle("GhostSecure - Login");
             loginStage.setScene(loginScene);
+
+            LoginGUI loginController = loginLoader.getController();
+            loginController.setError(loginError);
+
             loginStage.showAndWait();
 
             // Check if the login was successful
@@ -54,13 +60,13 @@ public class SubGUIHandler {
             stage.setTitle("GhostSecure - Set Password");
             stage.initModality(Modality.APPLICATION_MODAL); // Makes the prompt modal
             stage.initStyle(StageStyle.DECORATED);
-            scene.getStylesheets().add(getClass().getResource("/me/ghosthacks96/ghostsecure/dark-theme.css").toExternalForm());
+            scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/dark-theme.css")).toExternalForm());
 
             stage.setScene(scene);
             stage.setResizable(false);
             stage.setAlwaysOnTop(true);
             stage.requestFocus();
-            stage.getIcons().add(new javafx.scene.image.Image(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png").toExternalForm()));
+            stage.getIcons().add(new javafx.scene.image.Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png")).toExternalForm()));
 
             SetPasswordGUI controller = loader.getController();
             stage.showAndWait(); // Wait until the user closes the popup

@@ -9,6 +9,8 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
+import me.ghosthacks96.ghostsecure.utils.RecoveryHandler;
+import me.ghosthacks96.ghostsecure.utils.Update;
 import me.ghosthacks96.ghostsecure.utils.controllers.*;
 
 import java.nio.charset.StandardCharsets;
@@ -28,6 +30,7 @@ public class Main extends Application {
     public static Config config;
     public static Logging logger;
     public static SubGUIHandler sgh = new SubGUIHandler();
+    public static RecoveryHandler recoveryHandler;
 
     // UI components
     public static FXMLLoader mainLoader;
@@ -37,7 +40,11 @@ public class Main extends Application {
     public static void main(String[] args) {
         logger = new Logging();
         logger.logInfo("Application started.");
+
+        new Update("GhostSecure", "2.2.5");
+
         config = new Config();
+        recoveryHandler = new RecoveryHandler();
 
         launch();
     }
@@ -64,6 +71,21 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         try {
+            // Check for recovery mode first
+            if (recoveryHandler.shouldEnterRecoveryMode()) {
+                logger.logInfo("Recovery mode detected. Initiating password recovery...");
+
+                if (recoveryHandler.initiateRecovery()) {
+                    logger.logInfo("Password recovery completed successfully.");
+                    // Continue with normal startup after successful recovery
+                } else {
+                    logger.logError("Password recovery failed. Exiting application.");
+                    sgh.showError("Recovery Failed", "Password recovery failed. Please contact support.");
+                    System.exit(1);
+                    return;
+                }
+            }
+
             if (!config.getConfigFile().exists()) {
                 config.setDefaultConfig();
 
@@ -88,7 +110,6 @@ public class Main extends Application {
                     boolean loginSuccessful = sgh.openLoginScene();
                     if (!loginSuccessful) {
                         logger.logError("Login failed. Invalid password.");
-                        sgh.showError("Login Failed", "Invalid password. Tries left: " + tries);
                         if (tries == 0) {
                             System.exit(1);
                         }

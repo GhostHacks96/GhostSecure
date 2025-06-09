@@ -1,5 +1,6 @@
 package me.ghosthacks96.ghostsecure.gui;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -19,18 +20,21 @@ public class LoginGUI {
 
     @FXML private PasswordField passwordField;
     @FXML private Button submitButton;
-    @FXML private Label errorLabel;
+    @FXML private  Label errorLabel;
 
     @FXML
     public void initialize() {
-        String correctPasswordHash = Config.PASSWORD_HASH;
-        
+        errorLabel.setText("test");
         // Set up enter key handler
         passwordField.setOnKeyPressed(event -> {
             if (event.getCode().toString().equals("ENTER")) {
                 onSubmitButtonClick();
             }
         });
+    }
+
+    public void setError(String message) {
+        Platform.runLater(()->errorLabel.setText(message));
     }
 
     @FXML

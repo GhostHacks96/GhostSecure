@@ -220,8 +220,8 @@ public class ServiceController {
     private static void killProcess(String processName) {
         Main.logger.logInfo("Attempting to kill process: " + processName);
         try {
-            String command = "taskkill /F /IM " + processName;
-            Process process = new ProcessBuilder(command.split(" ")).start();
+			String command = "taskkill /F /IM " + processName;
+			Process process = new ProcessBuilder(command.split(" ")).start();
             process.waitFor();
             Main.logger.logInfo("Successfully killed process: " + processName);
         } catch (IOException | InterruptedException e) {

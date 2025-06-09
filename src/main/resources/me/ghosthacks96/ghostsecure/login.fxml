@@ -36,7 +36,7 @@
                 </ImageView>
 
                 <VBox alignment="CENTER" spacing="8">
-                    <Label text="App Locker" textAlignment="CENTER">
+                    <Label text="GhostSecure" textAlignment="CENTER">
                         <font>
                             <Font name="System Bold" size="32" />
                         </font>
@@ -90,21 +90,4 @@
             </Label>
         </VBox>
     </center>
-
-    <!-- Footer -->
-    <bottom>
-        <HBox alignment="CENTER">
-            <padding>
-                <Insets bottom="30" />
-            </padding>
-            <Label text="© 2025 GhostHacks96 - Secure Access Control">
-                <font>
-                    <Font size="12" />
-                </font>
-                <style>
-                    -fx-text-fill: #666666;
-                </style>
-            </Label>
-        </HBox>
-    </bottom>
 </BorderPane>

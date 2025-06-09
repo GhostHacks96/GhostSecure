@@ -29,7 +29,7 @@
                     </font>
                 </Label>
 
-                <Label text="App Locker Control Panel">
+                <Label text="GhostSecure - Control Panel">
                     <font>
                         <Font name="System Bold" size="22" />
                     </font>
@@ -87,7 +87,7 @@
                             </style>
                         </Label>
 
-                        <Label text="Control the App Locker service to enable or disable protection" textAlignment="CENTER" maxWidth="400" wrapText="true">
+                        <Label text="Control the GhostSecure  service to enable or disable protection" textAlignment="CENTER" maxWidth="400" wrapText="true">
                             <font>
                                 <Font size="16" />
                             </font>
@@ -213,6 +213,82 @@
                             </font>
                         </Button>
                     </HBox>
+                </VBox>
+            </Tab>
+
+            <!-- Settings Tab -->
+            <Tab text="⚙️ Settings" closable="false">
+                <VBox spacing="30">
+                    <padding>
+                        <Insets top="35" bottom="35" left="35" right="35" />
+                    </padding>
+                    <style>
+                        -fx-background-color: #1e1e1ef2;
+                        -fx-background-radius: 0 0 12 12;
+                    </style>
+
+                    <Label text="Application Settings" textAlignment="CENTER">
+                        <font>
+                            <Font name="System Bold" size="22" />
+                        </font>
+                        <style>
+                            -fx-text-fill: #00d4ff;
+                            -fx-effect: dropshadow(gaussian, #00d4ff4d, 3, 0, 0, 0);
+                        </style>
+                    </Label>
+
+                    <!-- Password Change Section -->
+                    <VBox spacing="20" alignment="CENTER">
+                        <Label text="Change Password" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="18" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #ffffff;
+                            </style>
+                        </Label>
+
+                        <VBox spacing="15" alignment="CENTER" maxWidth="350">
+                            <PasswordField fx:id="currentPasswordField" promptText="Current Password" prefWidth="350" prefHeight="45">
+                                <font>
+                                    <Font size="14" />
+                                </font>
+                            </PasswordField>
+
+                            <PasswordField fx:id="newPasswordField" promptText="New Password" prefWidth="350" prefHeight="45">
+                                <font>
+                                    <Font size="14" />
+                                </font>
+                            </PasswordField>
+
+                            <PasswordField fx:id="confirmPasswordField" promptText="Confirm New Password" prefWidth="350" prefHeight="45">
+                                <font>
+                                    <Font size="14" />
+                                </font>
+                            </PasswordField>
+
+                            <Label fx:id="passwordChangeStatus" text="" textAlignment="CENTER" maxWidth="350" wrapText="true">
+                                <font>
+                                    <Font size="12" />
+                                </font>
+                            </Label>
+
+                            <Button fx:id="changePasswordButton" onAction="#changePassword" text="CHANGE PASSWORD" prefWidth="200" prefHeight="45" styleClass="primary">
+                                <font>
+                                    <Font name="System Bold" size="12" />
+                                </font>
+                            </Button>
+                        </VBox>
+                    </VBox>
+
+                    <!-- Separator -->
+                    <Separator>
+                        <style>
+                            -fx-background-color: #00d4ff40;
+                        </style>
+                    </Separator>
+
+
                 </VBox>
             </Tab>
         </TabPane>

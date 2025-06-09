@@ -8,6 +8,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -29,25 +30,32 @@ import static me.ghosthacks96.ghostsecure.Main.logger;
  */
 public class HomeGUI {
 
-    public Button addProgramButton;
-    public Button removeProgramButton;
-    public Button switchProgramLock;
-    public Button addFolderButton;
-    public Button removeFolderButton;
-    public Button switchFolderLock;
+    @FXML public Button addProgramButton;
+    @FXML public Button removeProgramButton;
+    @FXML public Button switchProgramLock;
+    @FXML public Button addFolderButton;
+    @FXML public Button removeFolderButton;
+    @FXML public Button switchFolderLock;
+
     // UI Components
     @FXML private Button startServiceButton;
     @FXML private Button stopServiceButton;
     @FXML private Label lockStatus;
-    
+
+    // Settings Components
+    @FXML private PasswordField currentPasswordField;
+    @FXML private PasswordField newPasswordField;
+    @FXML private PasswordField confirmPasswordField;
+    @FXML private Label passwordChangeStatus;
+
     // Table components - Folders
     @FXML private TableView<LockedItem> folderTable;
     @FXML private TableColumn<LockedItem, Boolean> folderCheckBox;
     @FXML private TableColumn<LockedItem, String> folderNameColumn;
     @FXML private TableColumn<LockedItem, String> folderPathColumn;
     @FXML private TableColumn<LockedItem, Boolean> folderStatusColumn;
-    
-    // Table components - Programs  
+
+    // Table components - Programs
     @FXML private TableView<LockedItem> programTable;
     @FXML private TableColumn<LockedItem, Boolean> programCheckBox;
     @FXML private TableColumn<LockedItem, Boolean> programActionColumn;
@@ -107,9 +115,7 @@ public class HomeGUI {
         programTable.setItems(programItems);
 
         // Update UI
-
         updateServiceStatus();
-
     }
 
     @FXML
@@ -167,7 +173,6 @@ public class HomeGUI {
 
     @FXML
     public void startService() {
-
         logger.logInfo("Starting locking service.");
         if (Main.config.getJsonConfig().get("mode").getAsString().equals("unlock")) {
             Main.config.getJsonConfig().remove("mode");
@@ -189,7 +194,6 @@ public class HomeGUI {
         Platform.runLater(this::updateServiceStatus);
         logger.logInfo("Locking service stopped.");
     }
-
 
     public void updateServiceStatus() {
         boolean isRunning = ServiceController.isServiceRunning();
@@ -232,5 +236,75 @@ public class HomeGUI {
         });
         Config.saveConfig();
         refreshTableData();
+    }
+
+    @FXML
+    private void changePassword() {
+        logger.logInfo("Attempting to change password.");
+
+        String currentPassword = currentPasswordField.getText();
+        String newPassword = newPasswordField.getText();
+        String confirmPassword = confirmPasswordField.getText();
+
+        // Clear previous status
+        passwordChangeStatus.setText("");
+        passwordChangeStatus.getStyleClass().removeAll("error-label", "success-label");
+
+        // Validate inputs
+        if (currentPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
+            passwordChangeStatus.setText("All fields are required.");
+            passwordChangeStatus.getStyleClass().add("error-label");
+            logger.logWarning("Password change failed: missing fields.");
+            return;
+        }
+
+        // Verify current password
+        String currentPasswordHash = Main.hashPassword(currentPassword);
+        if (!currentPasswordHash.equals(Config.PASSWORD_HASH)) {
+            passwordChangeStatus.setText("Current password is incorrect.");
+            passwordChangeStatus.getStyleClass().add("error-label");
+            logger.logWarning("Password change failed: incorrect current password.");
+            return;
+        }
+
+        // Verify new passwords match
+        if (!newPassword.equals(confirmPassword)) {
+            passwordChangeStatus.setText("New passwords do not match.");
+            passwordChangeStatus.getStyleClass().add("error-label");
+            logger.logWarning("Password change failed: passwords do not match.");
+            return;
+        }
+
+        // Check minimum password length
+        if (newPassword.length() < 4) {
+            passwordChangeStatus.setText("Password must be at least 4 characters long.");
+            passwordChangeStatus.getStyleClass().add("error-label");
+            logger.logWarning("Password change failed: password too short.");
+            return;
+        }
+
+        try {
+            // Update password
+            String newPasswordHash = Main.hashPassword(newPassword);
+            Config.PASSWORD_HASH = newPasswordHash;
+            Main.config.getJsonConfig().remove("password");
+            Main.config.getJsonConfig().addProperty("password", newPasswordHash);
+            Config.saveConfig();
+
+            // Clear fields
+            currentPasswordField.clear();
+            newPasswordField.clear();
+            confirmPasswordField.clear();
+
+            // Show success message
+            passwordChangeStatus.setText("Password changed successfully!");
+            passwordChangeStatus.setTextFill(javafx.scene.paint.Color.GREEN);
+            logger.logInfo("Password changed successfully.");
+
+        } catch (Exception e) {
+            passwordChangeStatus.setText("Error changing password: " + e.getMessage());
+            passwordChangeStatus.getStyleClass().add("error-label");
+            logger.logError("Error changing password: " + e.getMessage());
+        }
     }
 }

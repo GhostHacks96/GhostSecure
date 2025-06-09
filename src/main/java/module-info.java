@@ -4,6 +4,7 @@ module ghostsecure {
     requires com.google.gson;
     requires org.kordamp.bootstrapfx.core;
     requires java.desktop;
+    requires java.net.http;
 
     opens me.ghosthacks96.ghostsecure to javafx.fxml, com.google.gson;
     exports me.ghosthacks96.ghostsecure;
