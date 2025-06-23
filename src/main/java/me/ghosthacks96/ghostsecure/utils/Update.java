@@ -16,17 +16,38 @@ public class Update {
     private static  String CURRENT_VERSION ;
 
     public Update(String appName, String currentVersion) {
+        Main.logger.logDebug("Update constructor called with appName=" + appName + ", currentVersion=" + currentVersion);
         APP_NAME = appName;
         CURRENT_VERSION = currentVersion;
-
         UpdateResponse response = checkForUpdates();
+        Main.logger.logDebug("Update checkForUpdates() response: " + response);
         if(response != null && response.update_available){
+
+            updateUpdaterFile();
+
             launchUpdater();
-            Main.logger.logInfo("Update available - application will exit now");
+            Main.logger.logDebug("Update available - application will exit now");
             System.exit(0);
         }
-
     }
+    
+    public void updateUpdaterFile(){
+        Main.logger.logDebug("updateUpdaterFile() called");
+        try {
+            URL downloadUrl = new URL("https://ghosthacks96.me/site/downloads/GhostUpdate.exe");
+            Main.logger.logDebug("Downloading updater from: " + downloadUrl);
+            java.nio.file.Path targetPath = java.nio.file.Paths.get(UPDATER_PATH);
+            try (java.io.InputStream in = downloadUrl.openStream()) {
+                java.nio.file.Files.copy(in, targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            Main.logger.logDebug("Updater file downloaded and updated successfully at: " + UPDATER_PATH);
+        } catch (Exception e) {
+            Main.logger.logError("Error updating updater file: " + e.getMessage());
+            Main.logger.logDebug("Exception: " + e);
+        }
+    }
+    
+    
 
     /**
      * Data class to hold update response information
@@ -51,8 +72,11 @@ public class Update {
      * @return UpdateResponse object or null if no update available or error occurred
      */
     public static UpdateResponse checkForUpdates() {
+        Main.logger.logDebug("checkForUpdates() called");
+        Main.logger.logDebug("Checking for updates...");
         try {
             URL url = new URL(API_URL);
+            Main.logger.logDebug("API URL: " + API_URL);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
             // Set request properties
@@ -73,10 +97,10 @@ public class Update {
             try (OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream())) {
                 writer.write(payload.toString());
                 writer.flush();
+                Main.logger.logDebug("Update check POST payload sent: " + payload);
             }
-
             int responseCode = connection.getResponseCode();
-
+            Main.logger.logDebug("Update check response code: " + responseCode);
             if (responseCode == 200) {
                 // Read response
                 StringBuilder response = new StringBuilder();
@@ -89,10 +113,11 @@ public class Update {
                 }
 
                 String responseBody = response.toString().trim();
+                Main.logger.logDebug("Update check response body: " + responseBody);
 
                 // Check if response indicates no update
                 if ("<noupdate>".equals(responseBody)) {
-                    System.out.println("No update available - application is up to date");
+                    Main.logger.logDebug("No update available - application is up to date");
                     return null;
                 }
 
@@ -100,29 +125,31 @@ public class Update {
                 try {
                     Gson gson = new Gson();
                     UpdateResponse updateResponse = gson.fromJson(responseBody, UpdateResponse.class);
-                    System.out.println("Update check response: " + updateResponse);
+                    Main.logger.logDebug("Update check response: " + updateResponse);
+                    Main.logger.logDebug("Parsed UpdateResponse: " + updateResponse);
                     return updateResponse;
                 } catch (Exception e) {
-                    System.err.println("Error parsing JSON response: " + e.getMessage());
-                    System.err.println("Response body: " + responseBody);
+                    Main.logger.logError("Error parsing JSON response: " + e.getMessage());
+                    Main.logger.logError("Response body: " + responseBody);
+                    Main.logger.logDebug("Exception: " + e);
                     return null;
                 }
 
             } else {
-                System.err.println("HTTP Error: " + responseCode);
+                Main.logger.logError("HTTP Error: " + responseCode);
                 // Try to read error response
                 try (BufferedReader reader = new BufferedReader(
                         new InputStreamReader(connection.getErrorStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        System.err.println("Error response: " + line);
+                        Main.logger.logError("Error response: " + line);
                     }
                 }
                 return null;
             }
-
         } catch (Exception e) {
-            System.err.println("Error checking for updates: " + e.getMessage());
+            Main.logger.logError("Error checking for updates: " + e.getMessage());
+            Main.logger.logDebug("Exception: " + e);
             e.printStackTrace();
             return null;
         }
@@ -133,26 +160,33 @@ public class Update {
      * @return true if updater was launched successfully, false otherwise
      */
     public static boolean launchUpdater() {
+        Main.logger.logDebug("launchUpdater() called");
+        Main.logger.logDebug("Attempting to launch updater...");
         try {
             File updaterFile = new File(UPDATER_PATH);
-
+            Main.logger.logDebug("Updater file path: " + UPDATER_PATH);
             if (!updaterFile.exists()) {
-                System.err.println("Updater not found at: " + UPDATER_PATH);
+                Main.logger.logError("Updater not found at: " + UPDATER_PATH);
                 return false;
             }
-
             if (!updaterFile.canExecute()) {
-                System.err.println("Updater is not executable: " + UPDATER_PATH);
+                Main.logger.logError("Updater is not executable: " + UPDATER_PATH);
                 return false;
             }
+            Main.logger.logDebug("Launching updater: " + UPDATER_PATH);
 
-            System.out.println("Launching updater: " + UPDATER_PATH);
-
+            String debug = "false";
+            if(Main.DEBUG_MODE){
+                debug = "true";
+                Main.logger.logDebug("Debug mode is enabled, passing debug argument to updater");
+            }
             // Build command with arguments
             ProcessBuilder processBuilder = new ProcessBuilder(
                     UPDATER_PATH,
                     APP_NAME,
-                    CURRENT_VERSION
+                    CURRENT_VERSION,
+                    debug
+
             );
 
             // Set working directory to the updater's directory
@@ -160,12 +194,12 @@ public class Update {
 
             // Start the process
             Process process = processBuilder.start();
-
-            System.out.println("Updater launched successfully with PID: " + process.pid());
+            Main.logger.logDebug("Updater process started");
+            Main.logger.logDebug("Updater launched successfully with PID: " + process.pid());
             return true;
-
         } catch (Exception e) {
-            System.err.println("Error launching updater: " + e.getMessage());
+            Main.logger.logError("Error launching updater: " + e.getMessage());
+            Main.logger.logDebug("Exception: " + e);
             e.printStackTrace();
             return false;
         }
