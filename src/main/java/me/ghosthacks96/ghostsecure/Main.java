@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
@@ -37,11 +38,17 @@ public class Main extends Application {
     public static Scene mainScene;
     public static Stage mainStage;
 
+    public static boolean DEBUG_MODE = false;
+
     public static void main(String[] args) {
+        if(args.length > 0 && args[0].equals("-debug")){
+                DEBUG_MODE = true;
+        }
         logger = new Logging();
         logger.logInfo("Application started.");
+        logger.logInfo("Initializing GhostSecure... v 2.3.0");
 
-        new Update("GhostSecure", "2.2.5");
+        new Update("GhostSecure", "2.3.0");
 
         config = new Config();
         recoveryHandler = new RecoveryHandler();
@@ -71,6 +78,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         try {
+            boolean loginSuccessful = false;
             // Check for recovery mode first
             if (recoveryHandler.shouldEnterRecoveryMode()) {
                 logger.logInfo("Recovery mode detected. Initiating password recovery...");
@@ -101,25 +109,21 @@ public class Main extends Application {
                 }
                 Config.PASSWORD_HASH = hashPassword(newPassword);
                 config.getJsonConfig().addProperty("password", Config.PASSWORD_HASH);
+                loginSuccessful = true;
 
                 logger.logInfo("New password setup successfully.");
             } else {
                 Config.loadConfig(false);
                 int tries = 3;
-                while (true) {
-                    boolean loginSuccessful = sgh.openLoginScene();
+                    loginSuccessful = sgh.openLoginScene();
                     if (!loginSuccessful) {
                         logger.logError("Login failed. Invalid password.");
-                        if (tries == 0) {
-                            System.exit(1);
-                        }
-                        tries--;
+                        sgh.showError("Login Failed", "no password, no touchy...");
                     } else {
-                        break;
+                        logger.logInfo("Login successful.");
                     }
-                }
-            }
 
+            }
             mainStage = stage;
             mainLoader = new FXMLLoader(Main.class.getResource("home.fxml"));
             mainScene = new Scene(mainLoader.load());
@@ -127,14 +131,14 @@ public class Main extends Application {
             mainStage.setTitle("Ghost Secure - Home");
             mainStage.setScene(mainScene);
 
-            mainStage.getIcons().add(new javafx.scene.image.Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png")).toExternalForm()));
+            mainStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png")).toExternalForm()));
             mainStage.initStyle(StageStyle.DECORATED);
 
 
             ServiceController.startBlockerDaemon();
 
 
-            if (!ServiceController.isServiceRunning()) {
+            if (!ServiceController.isServiceRunning() &&  loginSuccessful) {
                 mainStage.show();
                 logger.logInfo("Main stage displayed successfully.");
             } else {

@@ -29,6 +29,7 @@ public class Config {
 
     public Config() {
         logger = Main.logger;
+        logger.logDebug("Config constructor called");
         initializeEncryption();
     }
 
@@ -36,102 +37,100 @@ public class Config {
      * Initialize encryption key based on user information
      */
     private static void initializeEncryption() {
+        logger.logDebug("initializeEncryption() called");
         try {
             String username = System.getProperty("user.name");
             String systemInfo = EncryptionUtils.getSystemInfo();
-
+            logger.logDebug("Username: " + username + ", SystemInfo: " + systemInfo);
             File saltFile = new File(Main.appDataPath + SALT_FILE);
-
             // Load or create salt
             if (saltFile.exists()) {
                 keySalt = Files.readAllBytes(saltFile.toPath());
+                logger.logDebug("Salt file exists, loaded salt");
             } else {
                 keySalt = EncryptionUtils.generateSalt();
-                // Create directory if it doesn't exist
                 File appDataDir = new File(Main.appDataPath);
                 if (!appDataDir.exists()) {
                     appDataDir.mkdirs();
+                    logger.logDebug("AppData directory created");
                 }
                 Files.write(saltFile.toPath(), keySalt);
                 logger.logInfo("New encryption salt created.");
             }
-
-            // Derive encryption key from user info
             encryptionKey = EncryptionUtils.deriveKeyFromUserInfo(username, systemInfo, keySalt);
             logger.logInfo("Encryption initialized successfully.");
-
         } catch (Exception e) {
             logger.logError("Failed to initialize encryption: " + e.getMessage());
+            logger.logDebug("Exception: " + e);
             throw new RuntimeException("Encryption initialization failed", e);
         }
     }
 
     public static void loadConfig(boolean service) {
+        logger.logDebug("loadConfig(" + service + ") called");
         try {
             File configFile = new File(Main.appDataPath + CONFIG_FILE);
-
             if (!configFile.exists()) {
                 if (!service) logger.logWarning("No config file found. A new setup will be required.");
+                logger.logDebug("Config file does not exist");
                 return;
             }
-
-            // Read and decrypt config file
             String encryptedContent = Files.readString(configFile.toPath());
+            logger.logDebug("Encrypted config read from file");
             String decryptedContent = EncryptionUtils.decrypt(encryptedContent, encryptionKey);
-
-            // Parse JSON from decrypted content
+            logger.logDebug("Config decrypted");
             config = gson.fromJson(decryptedContent, JsonObject.class);
-
+            logger.logDebug("Config parsed from JSON");
             if (config.has("password")) {
                 PASSWORD_HASH = config.get("password").getAsString();
+                logger.logDebug("Password hash loaded");
             }
-
             if (!config.has("mode")) {
                 config.addProperty("mode", "unlock");
+                logger.logDebug("Mode property added to config");
             }
-
             loadLockedItemsFromConfig(service);
-
             if (!service) logger.logInfo("Encrypted config loaded successfully.");
-
         } catch (Exception e) {
             if (!service) {
                 logger.logWarning("Failed to load config file: " + e.getMessage());
                 logger.logWarning("A new setup will be required.");
             }
+            logger.logDebug("Exception: " + e);
             e.printStackTrace();
         }
     }
 
     private static void loadLockedItemsFromConfig(boolean service) {
+        logger.logDebug("loadLockedItemsFromConfig(" + service + ") called");
         try {
             if (!lockedItems.isEmpty()) lockedItems.clear();
-
             if (config.has("programs")) {
                 JsonArray programs = config.getAsJsonArray("programs");
                 for (int i = 0; i < programs.size(); i++) {
                     String programEntry = programs.get(i).getAsString();
                     lockedItems.add(parseLockedItem(programEntry));
                 }
+                logger.logDebug("Loaded programs from config");
             }
-
             if (config.has("folders")) {
                 JsonArray folders = config.getAsJsonArray("folders");
                 for (int i = 0; i < folders.size(); i++) {
                     String folderEntry = folders.get(i).getAsString();
                     lockedItems.add(parseLockedItem(folderEntry));
                 }
+                logger.logDebug("Loaded folders from config");
             }
-
             if (!service) logger.logInfo("Locked items loaded successfully from encrypted config.");
-
         } catch (Exception e) {
             logger.logError("Error loading locked items from config: " + e.getMessage());
+            logger.logDebug("Exception: " + e);
             e.printStackTrace();
         }
     }
 
     public static void printConfig() {
+        logger.logDebug("printConfig() called");
         if (config != null) {
             String configJson = gson.toJson(config);
             System.out.println("Current Config Data:");
@@ -154,10 +153,10 @@ public class Config {
     }
 
     public static void saveConfig() {
+        logger.logDebug("saveConfig() called");
         try {
             JsonArray programsArray = config.getAsJsonArray("programs");
             JsonArray foldersArray = config.getAsJsonArray("folders");
-
             if (programsArray == null) {
                 programsArray = new JsonArray();
                 config.add("programs", programsArray);
@@ -166,47 +165,37 @@ public class Config {
                 foldersArray = new JsonArray();
                 config.add("folders", foldersArray);
             }
-
-            // Clear arrays to rebuild them
             programsArray = new JsonArray();
             foldersArray = new JsonArray();
             config.add("programs", programsArray);
             config.add("folders", foldersArray);
-
             for (LockedItem item : lockedItems) {
                 String formattedPath = item.getPath() + "[::]" + (item.isLocked() ? "locked" : "unlocked");
-
                 if (item.getName().contains(".exe")) {
                     programsArray.add(formattedPath);
                 } else {
                     foldersArray.add(formattedPath);
                 }
             }
-
             File appDataDir = new File(Main.appDataPath);
             if (!appDataDir.exists() && !appDataDir.mkdirs()) {
                 throw new IOException("Failed to create AppData directory");
             }
-
             File configFile = new File(appDataDir, CONFIG_FILE);
-
-            // Convert config to JSON and encrypt it
             String jsonString = gson.toJson(config);
             String encryptedContent = EncryptionUtils.encrypt(jsonString, encryptionKey);
-
-            // Write encrypted content to file
             Files.writeString(configFile.toPath(), encryptedContent);
-
             logger.logInfo("Encrypted config saved successfully.");
-
         } catch (Exception e) {
             logger.logError("Error saving encrypted config file: " + e.getMessage());
+            logger.logDebug("Exception: " + e);
             e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
 
     private static LockedItem parseLockedItem(String input) {
+        logger.logDebug("parseLockedItem() called for: " + input);
         try {
             String[] parts = input.split("\\[::]");
             if (parts.length != 2) {
@@ -218,6 +207,7 @@ public class Config {
             return new LockedItem(path, name, lockStatus.equalsIgnoreCase("locked"));
         } catch (IllegalArgumentException e) {
             logger.logError("Error parsing locked item: " + input + " - " + e.getMessage());
+            logger.logDebug("Exception: " + e);
             e.printStackTrace();
             throw e;
         }
@@ -232,6 +222,7 @@ public class Config {
     }
 
     public void setDefaultConfig() throws Exception {
+        logger.logDebug("setDefaultConfig() called");
         config = new JsonObject();
         config.addProperty("mode", "unlock");
         config.add("programs", new JsonArray());

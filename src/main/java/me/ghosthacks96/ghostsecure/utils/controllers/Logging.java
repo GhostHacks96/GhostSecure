@@ -43,6 +43,12 @@ public class Logging {
         executor.submit(() -> appendToLogFile(logEntry));
     }
 
+    public void logDebug(String message) {
+        if (Main.DEBUG_MODE) {
+            log("DEBUG", message);
+        }
+    }
+
     private void appendToLogFile(String logEntry) {
         try (FileWriter writer = new FileWriter(CURRENT_LOG_FILE, true)) {
             writer.write(logEntry);
