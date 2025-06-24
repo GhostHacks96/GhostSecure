@@ -45,15 +45,12 @@ public class ServiceController {
                     checkPrograms();
                     checkFolders();
                 } catch (Exception e) {
-                    Main.logger.logError("Exception in blocker daemon tick: " + e.getMessage());
-                    
-                    e.printStackTrace();
+                    Main.logger.logError("Exception in blocker daemon tick: " + e.getMessage(),e);
                 }
             }, 0, 1, TimeUnit.SECONDS); // Run immediately, then every 1 second
             Main.logger.logInfo("Blocker daemon started successfully.");
         } catch (Exception e) {
-            Main.logger.logError("Failed to start the blocker daemon: " + e.getMessage());
-            
+            Main.logger.logError("Failed to start the blocker daemon: " + e.getMessage(),e);
         }
     }
 
@@ -69,7 +66,7 @@ public class ServiceController {
                     scheduler.shutdownNow();
                 }
             } catch (InterruptedException e) {
-                Main.logger.logDebug("InterruptedException during scheduler shutdown: " + e);
+                Main.logger.logDebug("InterruptedException during scheduler shutdown: " + e.getMessage(),e);
                 scheduler.shutdownNow();
             }
         }
@@ -91,9 +88,7 @@ public class ServiceController {
                 applyPermissionsRecursively(folderPath, li);
             }
         } catch (Exception e) {
-            Main.logger.logError("Failed to check locked folders: " + e.getMessage());
-            
-            e.printStackTrace();
+            Main.logger.logError("Failed to check locked folders: " + e.getMessage(),e);
         }
     }
 
@@ -115,8 +110,7 @@ public class ServiceController {
                                     try {
                                         applyPermissionsToPath(path, li);
                                     } catch (Exception e) {
-                                        Main.logger.logError("Failed to apply permissions to: " + path + "; Error: " + e.getMessage());
-                                        
+                                        Main.logger.logError("Failed to apply permissions to: " + path + "; Error: " + e.getMessage(),e);
                                     }
                                 });
                     } else {
@@ -127,21 +121,19 @@ public class ServiceController {
                                     try {
                                         applyPermissionsToPath(path, li);
                                     } catch (Exception e) {
-                                        Main.logger.logError("Failed to apply permissions to: " + path + "; Error: " + e.getMessage());
-                                        
+                                        Main.logger.logError("Failed to apply permissions to: " + path + "; Error: " + e.getMessage(),e);
                                     }
                                 });
                     }
                 } catch (IOException e) {
-                    Main.logger.logError("Failed to walk directory tree for: " + rootPath + "; Error: " + e.getMessage());
-                    
+                    Main.logger.logError("Failed to walk directory tree for: " + rootPath + "; Error: " + e.getMessage(),e);
                 }
             }
             // Apply permissions to the root folder/file last (for locking) or first (for unlocking)
             applyPermissionsToPath(rootPath, li);
         } catch (Exception e) {
-            Main.logger.logError("Failed to apply permissions recursively to: " + rootPath + "; Error: " + e.getMessage());
-            
+            Main.logger.logError("Failed to apply permissions recursively to: " + rootPath + "; Error: " + e.getMessage(),e);
+
         }
     }
 
@@ -188,8 +180,7 @@ public class ServiceController {
                 }
             }
         } catch (Exception aclError) {
-            Main.logger.logError("Failed to modify permissions for: " + path + "; Error: " + aclError.getMessage());
-            Main.logger.logDebug("Exception: " + aclError);
+            Main.logger.logError("Failed to modify permissions for: " + path + "; Error: " + aclError.getMessage(),aclError);
         }
     }
 
@@ -214,9 +205,7 @@ public class ServiceController {
                 }
             }
         } catch (Exception e) {
-            Main.logger.logError("Failed to check locked programs: " + e.getMessage());
-            
-            e.printStackTrace();
+            Main.logger.logError("Failed to check locked programs: " + e.getMessage(),e);
         }
     }
 
@@ -230,8 +219,7 @@ public class ServiceController {
             process.waitFor();
             Main.logger.logInfo("Successfully killed process: " + processName);
         } catch (IOException | InterruptedException e) {
-            Main.logger.logError("Failed to kill process " + processName + ": " + e.getMessage());
-            
+            Main.logger.logError("Failed to kill process " + processName + ": " + e.getMessage(),e);
         }
     }
 
@@ -262,7 +250,6 @@ public class ServiceController {
             stopBlockerDaemon();
             return false;
         } catch (Exception e) {
-            
             e.printStackTrace();
         }
         return false;

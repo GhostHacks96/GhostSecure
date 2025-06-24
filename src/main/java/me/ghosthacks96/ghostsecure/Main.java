@@ -14,6 +14,8 @@ import me.ghosthacks96.ghostsecure.utils.RecoveryHandler;
 import me.ghosthacks96.ghostsecure.utils.Update;
 import me.ghosthacks96.ghostsecure.utils.controllers.*;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -41,9 +43,6 @@ public class Main extends Application {
     public static boolean DEBUG_MODE = false;
 
     public static void main(String[] args) {
-        if(args.length > 0 && args[0].equals("-debug")){
-                DEBUG_MODE = true;
-        }
         logger = new Logging();
         logger.logInfo("Application started.");
         logger.logInfo("Initializing GhostSecure... v 2.3.0");
@@ -56,6 +55,23 @@ public class Main extends Application {
         launch();
     }
 
+    public void shiftDebug(boolean debug){
+        DEBUG_MODE = debug;
+        try {
+            if (DEBUG_MODE) {
+                File debugFile = new File(appDataPath + "debug.txt");
+                if(!debugFile.exists()) debugFile.createNewFile();
+
+                logger.logInfo("Debug mode enabled.");
+            } else {
+                File debugFile = new File(appDataPath + "debug.txt");
+                if(debugFile.exists()) debugFile.delete();
+                logger.logInfo("Debug mode disabled.");
+            }
+        } catch (IOException e) {
+            logger.logError("Failed to shift debug mode: " + e.getMessage());
+        }
+    }
 
     public static String hashPassword(String password) {
         try {
@@ -69,8 +85,8 @@ public class Main extends Application {
             }
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error hashing password: " + e.getMessage());
+            logger.logError("Error hashing password: " + e.getMessage(), e);
+            return null;
         }
     }
 
@@ -92,6 +108,8 @@ public class Main extends Application {
                     System.exit(1);
                     return;
                 }
+            }else{
+                logger.logInfo("No recovery needed. Continuing with normal startup.");
             }
 
             if (!config.getConfigFile().exists()) {
@@ -119,6 +137,8 @@ public class Main extends Application {
                     if (!loginSuccessful) {
                         logger.logError("Login failed. Invalid password.");
                         sgh.showError("Login Failed", "no password, no touchy...");
+                        config.getJsonConfig().remove("mode");
+                        config.getJsonConfig().addProperty("mode", "lock");
                     } else {
                         logger.logInfo("Login successful.");
                     }
@@ -141,17 +161,13 @@ public class Main extends Application {
             if (!ServiceController.isServiceRunning() &&  loginSuccessful) {
                 mainStage.show();
                 logger.logInfo("Main stage displayed successfully.");
-            } else {
-                sgh.showInfo("Minimized to System Tray", "GhostSecure is minimized to the system tray. You can restore it by using the open GUI button in the tray icon menu.");
             }
 
             SystemTrayIntegration sysTray = new SystemTrayIntegration();
             sysTray.setupSystemTray(mainStage);
 
         } catch (Exception e) {
-            e.printStackTrace();
-            logger.logError("Error initializing application: " + e.getMessage());
-            throw new RuntimeException(e);
+            logger.logError("Error initializing application: " + e.getMessage(), e);
         }
     }
 }

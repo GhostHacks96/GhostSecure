@@ -48,8 +48,7 @@ public class SubGUIHandler {
             return result;
         } catch (IOException e) {
             Main.logger.logError("Error loading login GUI: " + e.getMessage());
-            Main.logger.logDebug("Exception: " + e);
-            e.printStackTrace();
+            Main.logger.logDebug("Exception: " +e.getMessage(),e);
             return false; // Login failed due to error
         }
     }
@@ -80,8 +79,7 @@ public class SubGUIHandler {
             Main.logger.logDebug("Password setup was unsuccessful");
         } catch (IOException e) {
             Main.logger.logError("Error loading set password GUI: " + e.getMessage());
-            Main.logger.logDebug("Exception: " + e);
-            e.printStackTrace();
+            Main.logger.logDebug("Exception: " + e.getMessage(),e);
         }
         return null; // Return null if the password setup was unsuccessful
     }

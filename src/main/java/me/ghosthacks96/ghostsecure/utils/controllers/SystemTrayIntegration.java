@@ -145,8 +145,7 @@ public class SystemTrayIntegration {
             logger.logDebug("Tray icon added to system tray");
         } catch (AWTException e) {
             logger.logDebug("Unable to add tray icon: " + e.getMessage());
-            System.err.println("Unable to add tray icon.");
-            e.printStackTrace();
+            logger.logError("Unable to add tray icon", e);
         }
 
         // Minimize to tray on close request

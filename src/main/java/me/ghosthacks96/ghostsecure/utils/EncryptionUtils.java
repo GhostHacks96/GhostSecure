@@ -44,9 +44,9 @@ public class EncryptionUtils {
             byte[] keyBytes = factory.generateSecret(spec).getEncoded();
 
             return new SecretKeySpec(keyBytes, ALGORITHM);
-
         } catch (Exception e) {
-            throw new RuntimeException("Failed to derive key from user info", e);
+            me.ghosthacks96.ghostsecure.Main.logger.logError("Failed to derive key from user info", e);
+            return null;
         }
     }
 
@@ -85,9 +85,9 @@ public class EncryptionUtils {
             byte[] hash = md.digest(combined.getBytes(StandardCharsets.UTF_8));
 
             return Base64.getEncoder().encodeToString(hash);
-
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get system info", e);
+            me.ghosthacks96.ghostsecure.Main.logger.logError("Failed to get system info", e);
+            return null;
         }
     }
 
@@ -116,9 +116,9 @@ public class EncryptionUtils {
             System.arraycopy(encryptedData, 0, encryptedWithIv, iv.length, encryptedData.length);
 
             return Base64.getEncoder().encodeToString(encryptedWithIv);
-
         } catch (Exception e) {
-            throw new RuntimeException("Encryption failed", e);
+            me.ghosthacks96.ghostsecure.Main.logger.logError("Encryption failed", e);
+            return null;
         }
     }
 
@@ -145,9 +145,9 @@ public class EncryptionUtils {
 
             byte[] decryptedData = cipher.doFinal(encrypted);
             return new String(decryptedData, StandardCharsets.UTF_8);
-
         } catch (Exception e) {
-            throw new RuntimeException("Decryption failed", e);
+            me.ghosthacks96.ghostsecure.Main.logger.logError("Decryption failed", e);
+            return null;
         }
     }
 }

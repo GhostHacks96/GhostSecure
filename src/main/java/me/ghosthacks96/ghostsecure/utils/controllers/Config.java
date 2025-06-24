@@ -62,7 +62,6 @@ public class Config {
         } catch (Exception e) {
             logger.logError("Failed to initialize encryption: " + e.getMessage());
             logger.logDebug("Exception: " + e);
-            throw new RuntimeException("Encryption initialization failed", e);
         }
     }
 
@@ -96,8 +95,7 @@ public class Config {
                 logger.logWarning("Failed to load config file: " + e.getMessage());
                 logger.logWarning("A new setup will be required.");
             }
-            logger.logDebug("Exception: " + e);
-            e.printStackTrace();
+            logger.logDebug("Exception: " + e.getMessage(),e);
         }
     }
 
@@ -124,8 +122,7 @@ public class Config {
             if (!service) logger.logInfo("Locked items loaded successfully from encrypted config.");
         } catch (Exception e) {
             logger.logError("Error loading locked items from config: " + e.getMessage());
-            logger.logDebug("Exception: " + e);
-            e.printStackTrace();
+            logger.logDebug("Exception: "+e.getLocalizedMessage(), e);
         }
     }
 
@@ -179,7 +176,8 @@ public class Config {
             }
             File appDataDir = new File(Main.appDataPath);
             if (!appDataDir.exists() && !appDataDir.mkdirs()) {
-                throw new IOException("Failed to create AppData directory");
+                logger.logError("Failed to create AppData directory");
+                return;
             }
             File configFile = new File(appDataDir, CONFIG_FILE);
             String jsonString = gson.toJson(config);
@@ -190,7 +188,7 @@ public class Config {
             logger.logError("Error saving encrypted config file: " + e.getMessage());
             logger.logDebug("Exception: " + e);
             e.printStackTrace();
-            throw new RuntimeException(e);
+            return;
         }
     }
 
@@ -199,7 +197,8 @@ public class Config {
         try {
             String[] parts = input.split("\\[::]");
             if (parts.length != 2) {
-                throw new IllegalArgumentException("Invalid format for locked item: " + input);
+                logger.logError("Invalid format for locked item: " + input);
+                return null;
             }
             String path = parts[0];
             String lockStatus = parts[1];
@@ -209,7 +208,7 @@ public class Config {
             logger.logError("Error parsing locked item: " + input + " - " + e.getMessage());
             logger.logDebug("Exception: " + e);
             e.printStackTrace();
-            throw e;
+            return null;
         }
     }
 
@@ -229,15 +228,23 @@ public class Config {
         config.add("folders", new JsonArray());
         config.addProperty("password", "");
         lockedItems.clear();
-        saveConfig();
+        try {
+            saveConfig();
+        } catch (Exception e) {
+            logger.logError("Error saving default config: " + e.getMessage());
+            logger.logDebug("Exception: " + e);
+            e.printStackTrace();
+            return;
+        }
         logger.logInfo("Default config created successfully.");
-
         File appDataDir = new File(Main.appDataPath);
         if (!appDataDir.exists()) {
             if (!appDataDir.mkdirs()) {
-                throw new IOException("Failed to create AppData directory");
+                logger.logError("Failed to create AppData directory");
+                return;
             }
             logger.logInfo("AppData directory created successfully.");
         }
     }
 }
+

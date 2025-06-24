@@ -217,7 +217,7 @@
             </Tab>
 
             <!-- Settings Tab -->
-            <Tab text="⚙️ Settings" closable="false">
+            <Tab text="⛭ Settings" closable="false">
                 <VBox spacing="30">
                     <padding>
                         <Insets top="35" bottom="35" left="35" right="35" />
@@ -288,6 +288,50 @@
                         </style>
                     </Separator>
 
+                    <!-- Debug Settings Section -->
+                    <VBox spacing="20" alignment="CENTER">
+                        <Label text="Debug Settings" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="18" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #ffffff;
+                            </style>
+                        </Label>
+
+                        <VBox spacing="15" alignment="CENTER" maxWidth="350">
+                            <HBox spacing="15" alignment="CENTER">
+                                <CheckBox fx:id="debugModeCheckBox" onAction="#toggleDebugMode">
+                                    <style>
+                                        -fx-text-fill: #ffffff;
+                                    </style>
+                                </CheckBox>
+                                <Label text="Enable Debug Mode" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="14" />
+                                    </font>
+                                    <style>
+                                        -fx-text-fill: #ffffff;
+                                    </style>
+                                </Label>
+                            </HBox>
+
+                            <Label text="Enable detailed logging and debug information for troubleshooting" textAlignment="CENTER" maxWidth="300" wrapText="true">
+                                <font>
+                                    <Font size="12" />
+                                </font>
+                                <style>
+                                    -fx-text-fill: #b0b0b0;
+                                </style>
+                            </Label>
+
+                            <Label fx:id="debugStatus" text="" textAlignment="CENTER" maxWidth="350" wrapText="true">
+                                <font>
+                                    <Font size="12" />
+                                </font>
+                            </Label>
+                        </VBox>
+                    </VBox>
 
                 </VBox>
             </Tab>

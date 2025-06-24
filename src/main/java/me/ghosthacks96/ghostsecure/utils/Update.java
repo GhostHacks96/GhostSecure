@@ -60,7 +60,6 @@ public class Update {
         public String release_url;
         public String published_at;
 
-        @Override
         public String toString() {
             return String.format("UpdateResponse{update_available=%s, latest_version='%s', current_version='%s'}",
                     update_available, latest_version, current_version);
@@ -129,9 +128,9 @@ public class Update {
                     Main.logger.logDebug("Parsed UpdateResponse: " + updateResponse);
                     return updateResponse;
                 } catch (Exception e) {
-                    Main.logger.logError("Error parsing JSON response: " + e.getMessage());
-                    Main.logger.logError("Response body: " + responseBody);
+                    Main.logger.logError("Error parsing JSON response: " + e.getMessage(), e);
                     Main.logger.logDebug("Exception: " + e);
+                    Main.logger.logException(e);
                     return null;
                 }
 
@@ -148,9 +147,9 @@ public class Update {
                 return null;
             }
         } catch (Exception e) {
-            Main.logger.logError("Error checking for updates: " + e.getMessage());
+            Main.logger.logError("Error checking for updates: " + e.getMessage(), e);
             Main.logger.logDebug("Exception: " + e);
-            e.printStackTrace();
+            Main.logger.logException(e);
             return null;
         }
     }
@@ -180,27 +179,22 @@ public class Update {
                 debug = "true";
                 Main.logger.logDebug("Debug mode is enabled, passing debug argument to updater");
             }
-            // Build command with arguments
-            ProcessBuilder processBuilder = new ProcessBuilder(
+
+            Runtime rt = Runtime.getRuntime();
+            // Start the process
+            Process process = rt.exec(new String[] {
                     UPDATER_PATH,
                     APP_NAME,
                     CURRENT_VERSION,
                     debug
-
-            );
-
-            // Set working directory to the updater's directory
-            processBuilder.directory(updaterFile.getParentFile());
-
-            // Start the process
-            Process process = processBuilder.start();
+            }, null, Paths.get(updaterFile.getAbsolutePath()).toFile());
             Main.logger.logDebug("Updater process started");
             Main.logger.logDebug("Updater launched successfully with PID: " + process.pid());
             return true;
         } catch (Exception e) {
-            Main.logger.logError("Error launching updater: " + e.getMessage());
+            Main.logger.logError("Error launching updater: " + e.getMessage(), e);
             Main.logger.logDebug("Exception: " + e);
-            e.printStackTrace();
+            Main.logger.logException(e);
             return false;
         }
     }

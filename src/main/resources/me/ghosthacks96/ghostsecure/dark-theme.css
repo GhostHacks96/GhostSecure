@@ -18,10 +18,10 @@
     -fx-text-fill: #ffffff;
 }
 
-/* Tab Pane Styling */
+/* Tab Pane Styling - Updated for sleeker look */
 .tab-pane {
-    -fx-tab-min-height: 45px;
-    -fx-tab-max-height: 45px;
+    -fx-tab-min-height: 32px;
+    -fx-tab-max-height: 32px;
 }
 
 .tab-pane .tab-header-area {
@@ -37,19 +37,20 @@
 .tab-pane .tab {
     -fx-background-color: #1e1e1ecc;
     -fx-text-fill: #b0b0b0;
-    -fx-background-radius: 10 10 0 0;
+    -fx-background-radius: 6 6 0 0;
     -fx-border-color: #00d4ff4d;
     -fx-border-width: 1 1 0 1;
-    -fx-border-radius: 10 10 0 0;
-    -fx-padding: 12 20 12 20;
+    -fx-border-radius: 6 6 0 0;
+    -fx-padding: 6 16 6 16;
     -fx-font-weight: bold;
+    -fx-font-size: 13px;
 }
 
 .tab-pane .tab:selected {
     -fx-background-color: #00d4ff26;
     -fx-text-fill: #00d4ff;
     -fx-border-color: #00d4ff;
-    -fx-border-width: 2 2 0 2;
+    -fx-border-width: 1.5 1.5 0 1.5;
 }
 
 .tab-pane .tab:hover {
@@ -140,7 +141,7 @@
 /* Danger Button (Red) */
 .button.danger {
     -fx-background-color: linear-gradient(to bottom right, #ff4757 0%, #c44569 100%);
-    -fx-text-fill: #ffffff;
+    -fx-text-fill: #000000;
     -fx-background-radius: 8;
 }
 
@@ -152,7 +153,7 @@
 /* Warning Button (Orange) */
 .button.warning {
     -fx-background-color: linear-gradient(to bottom right, #ffa502 0%, #ff6348 100%);
-    -fx-text-fill: #ffffff;
+    -fx-text-fill: #000000;
     -fx-background-radius: 8;
 }
 

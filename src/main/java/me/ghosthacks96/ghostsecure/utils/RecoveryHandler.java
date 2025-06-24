@@ -7,25 +7,21 @@ import me.ghosthacks96.ghostsecure.utils.controllers.Config;
 import me.ghosthacks96.ghostsecure.utils.controllers.Logging;
 import me.ghosthacks96.ghostsecure.utils.controllers.SubGUIHandler;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.time.Duration;
 
 /**
  * Handles password recovery functionality for GhostSecure
  */
 public class RecoveryHandler {
 
-    private static final String RECOVERY_FILE = "rk.txt";
+    private static final String RECOVERY_FILE = Main.appDataPath + "rk.txt";
     private static final String RECOVERY_API_URL = "https://ghosthacks96.me/site/GhostAPI/API.php";
-    private static final int API_TIMEOUT_SECONDS = 10;
+    private static final int CONNECT_TIMEOUT_SECONDS = 15000; // Changed to milliseconds
+    private static final int REQUEST_TIMEOUT_SECONDS = 30000; // Changed to milliseconds
 
     private final Logging logger;
     private final SubGUIHandler sgh;
@@ -99,9 +95,9 @@ public class RecoveryHandler {
             }
 
         } catch (Exception e) {
-            logger.logError("Error during recovery process: " + e.getMessage());
+            logger.logError("Error during recovery process: " + e.getMessage(), e);
             sgh.showError("Recovery Error", "An error occurred during recovery: " + e.getMessage());
-            e.printStackTrace();
+            logger.logException(e);
             return false;
         }
     }
@@ -120,11 +116,10 @@ public class RecoveryHandler {
 
             String key = Files.readString(recoveryFile.toPath(), StandardCharsets.UTF_8);
             logger.logInfo("Recovery key read from file successfully");
-            return key;
-
+            return key.trim(); // Trim whitespace here
         } catch (IOException e) {
-            logger.logError("Error reading recovery key file: " + e.getMessage());
-            e.printStackTrace();
+            logger.logError("Error reading recovery key file: " + e.getMessage(), e);
+            logger.logException(e);
             return null;
         }
     }
@@ -138,55 +133,150 @@ public class RecoveryHandler {
         try {
             logger.logInfo("Validating recovery key with API...");
 
-            // URL encode the recovery key
-            String encodedKey = URLEncoder.encode(recoveryKey, StandardCharsets.UTF_8);
-            String apiUrl = RECOVERY_API_URL + "?recovery=1&key=" + encodedKey;
+            // Create JSON payload to match API.php expectations
+            JsonObject payload = new JsonObject();
+            payload.addProperty("action", "recovery");
+            payload.addProperty("key", recoveryKey);
 
-            // Create HTTP client with timeout
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(API_TIMEOUT_SECONDS))
-                    .build();
+            String jsonData = payload.toString();
+            logger.logInfo("Sending recovery validation request...");
+            logger.logDebug("JSON payload: " + jsonData);
 
-            // Create HTTP request
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl))
-                    .timeout(Duration.ofSeconds(API_TIMEOUT_SECONDS))
-                    .header("User-Agent", "GhostSecure/1.0")
-                    .GET()
-                    .build();
+            // Use HttpURLConnection like the Update class
+            URL url = new URL(RECOVERY_API_URL);
+            logger.logDebug("API URL: " + RECOVERY_API_URL);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-            // Send request and get response
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            // Set request properties - matching Update class exactly
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("User-Agent", "GhostSecure/1.0");
+            connection.setDoOutput(true);
+            connection.setConnectTimeout(CONNECT_TIMEOUT_SECONDS);
+            connection.setReadTimeout(REQUEST_TIMEOUT_SECONDS);
 
-            logger.logInfo("API Response Status: " + response.statusCode());
-            logger.logInfo("API Response Body: " + response.body());
+            logger.logDebug("Sending request to: " + RECOVERY_API_URL);
+
+            // Send request
+            try (OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), StandardCharsets.UTF_8)) {
+                writer.write(jsonData);
+                writer.flush();
+                logger.logDebug("Recovery validation POST payload sent: " + jsonData);
+            }
+
+            int responseCode = connection.getResponseCode();
+            logger.logInfo("API Response Status: " + responseCode);
 
             // Check if request was successful
-            if (response.statusCode() != 200) {
-                logger.logError("API request failed with status code: " + response.statusCode());
-                return false;
-            }
+            if (responseCode != 200) {
+                logger.logError("API request failed with status code: " + responseCode);
 
-            // Parse JSON response
-            try {
-                JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
-
-                if (jsonResponse.has("valid") && jsonResponse.get("valid").getAsBoolean()) {
-                    logger.logInfo("Recovery key validation successful");
-                    return true;
-                } else {
-                    logger.logError("Recovery key validation failed - key not valid");
-                    return false;
+                // Try to read error response
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(connection.getErrorStream()))) {
+                    String line;
+                    StringBuilder errorResponse = new StringBuilder();
+                    while ((line = reader.readLine()) != null) {
+                        errorResponse.append(line);
+                        logger.logError("Error response: " + line);
+                    }
                 }
 
-            } catch (Exception e) {
-                logger.logError("Error parsing API response: " + e.getMessage());
+                // Handle specific HTTP error codes
+                switch (responseCode) {
+                    case 400:
+                        logger.logError("Bad request - check recovery key format");
+                        sgh.showError("Recovery Error", "Invalid recovery key format.");
+                        break;
+                    case 404:
+                        logger.logError("Recovery API endpoint not found");
+                        sgh.showError("Recovery Error", "Recovery service unavailable. Please contact support.");
+                        break;
+                    case 500:
+                        logger.logError("Server error during recovery validation");
+                        sgh.showError("Recovery Error", "Server error. Please try again later.");
+                        break;
+                    default:
+                        logger.logError("Unexpected HTTP error: " + responseCode);
+                        sgh.showError("Recovery Error", "Network error. Please check your connection and try again.");
+                }
                 return false;
             }
 
+            // Read response
+            StringBuilder response = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+            }
+
+            String responseBody = response.toString().trim();
+            logger.logDebug("API Response Body: " + responseBody);
+
+            // Check if response body is empty or null
+            if (responseBody.isEmpty()) {
+                logger.logError("API response body is empty");
+                sgh.showError("Recovery Error", "Empty response from server. Please try again.");
+                return false;
+            }
+
+            // Parse JSON response with better error handling
+            try {
+                JsonObject jsonResponse = JsonParser.parseString(responseBody).getAsJsonObject();
+
+                if (jsonResponse.has("valid")) {
+                    boolean isValid = jsonResponse.get("valid").getAsBoolean();
+                    logger.logInfo("Recovery key validation result: " + isValid);
+
+                    // Log additional info if available
+                    if (jsonResponse.has("message")) {
+                        String message = jsonResponse.get("message").getAsString();
+                        logger.logInfo("API message: " + message);
+                    }
+
+                    return isValid;
+                } else if (jsonResponse.has("error")) {
+                    String errorMsg = jsonResponse.get("error").getAsString();
+                    logger.logError("API returned error: " + errorMsg);
+                    sgh.showError("Recovery Error", "Server error: " + errorMsg);
+                    return false;
+                } else {
+                    logger.logError("API response missing expected fields");
+                    logger.logError("Response was: " + responseBody);
+                    sgh.showError("Recovery Error", "Invalid response from server. Please contact support.");
+                    return false;
+                }
+            } catch (Exception jsonException) {
+                logger.logError("Failed to parse JSON response: " + jsonException.getMessage());
+                logger.logError("Response body was: " + responseBody);
+                sgh.showError("Recovery Error", "Invalid response format from server. Please contact support.");
+                return false;
+            }
+
+        } catch (java.net.SocketTimeoutException timeoutException) {
+            logger.logError("Request timed out: " + timeoutException.getMessage(), timeoutException);
+            logger.logException(timeoutException);
+            sgh.showError("Network Error", "Request timed out. Please check your internet connection and try again.");
+            return false;
+        } catch (java.net.ConnectException connectException) {
+            logger.logError("Connection failed: " + connectException.getMessage(), connectException);
+            logger.logException(connectException);
+            sgh.showError("Network Error", "Could not connect to recovery server. Please check your internet connection.");
+            return false;
+        } catch (java.io.IOException ioException) {
+            logger.logError("IO error during API request: " + ioException.getMessage(), ioException);
+            logger.logException(ioException);
+            sgh.showError("Network Error", "Network communication error. Please try again.");
+            return false;
         } catch (Exception e) {
-            logger.logError("Error validating recovery key: " + e.getMessage());
-            e.printStackTrace();
+            logger.logError("Unexpected error validating recovery key: " + e.getMessage(), e);
+            logger.logException(e);
+            logger.logError("Exception type: " + e.getClass().getSimpleName());
+            sgh.showError("Recovery Error", "An unexpected error occurred. Please contact support.");
             return false;
         }
     }
@@ -198,15 +288,11 @@ public class RecoveryHandler {
      */
     private boolean updatePassword(String newPassword) {
         try {
+            logger.logInfo("Updating password in configuration...");
+
             // Hash the new password
             String hashedPassword = Main.hashPassword(newPassword);
-
-            // Load existing config or create new one
-            if (Main.config.getConfigFile().exists()) {
-                Config.loadConfig(false);
-            } else {
-                Main.config.setDefaultConfig();
-            }
+            logger.logDebug("Password hashed successfully");
 
             // Update password in config
             Config.PASSWORD_HASH = hashedPassword;
@@ -217,10 +303,9 @@ public class RecoveryHandler {
 
             logger.logInfo("Password updated successfully in configuration");
             return true;
-
         } catch (Exception e) {
-            logger.logError("Error updating password: " + e.getMessage());
-            e.printStackTrace();
+            logger.logError("Error updating password: " + e.getMessage(), e);
+            logger.logException(e);
             return false;
         }
     }
@@ -235,12 +320,19 @@ public class RecoveryHandler {
                 if (recoveryFile.delete()) {
                     logger.logInfo("Recovery file deleted successfully");
                 } else {
-                    logger.logWarning("Failed to delete recovery file");
+                    logger.logWarning("Failed to delete recovery file - file may be in use");
+                    // Try to delete on exit if immediate deletion fails
+                    recoveryFile.deleteOnExit();
                 }
+            } else {
+                logger.logDebug("Recovery file does not exist, nothing to delete");
             }
+        } catch (SecurityException securityException) {
+            logger.logError("Security error deleting recovery file: " + securityException.getMessage(), securityException);
+            logger.logException(securityException);
         } catch (Exception e) {
-            logger.logError("Error deleting recovery file: " + e.getMessage());
-            e.printStackTrace();
+            logger.logError("Error deleting recovery file: " + e.getMessage(), e);
+            logger.logException(e);
         }
     }
 }

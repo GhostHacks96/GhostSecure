@@ -48,6 +48,10 @@ public class HomeGUI {
     @FXML private PasswordField confirmPasswordField;
     @FXML private Label passwordChangeStatus;
 
+    // Debug Components
+    @FXML private CheckBox debugModeCheckBox;
+    @FXML private Label debugStatus;
+
     // Table components - Folders
     @FXML private TableView<LockedItem> folderTable;
     @FXML private TableColumn<LockedItem, Boolean> folderCheckBox;
@@ -109,6 +113,9 @@ public class HomeGUI {
         programActionColumn.setCellValueFactory(cellData -> cellData.getValue().isLockedProperty());
         programTable.setEditable(true);
 
+        // Initialize debug checkbox state
+        initializeDebugMode();
+
         // Populate initial data
         refreshTableData();
         folderTable.setItems(folderItems);
@@ -116,6 +123,56 @@ public class HomeGUI {
 
         // Update UI
         updateServiceStatus();
+    }
+
+    private void initializeDebugMode() {
+        try {
+            // Check if debug mode is enabled in config
+            boolean debugEnabled = false;
+            if (Main.config.getJsonConfig().has("debugMode")) {
+                debugEnabled = Main.config.getJsonConfig().get("debugMode").getAsBoolean();
+            }
+
+            debugModeCheckBox.setSelected(debugEnabled);
+            updateDebugStatus(debugEnabled);
+            logger.logInfo("Debug mode initialized: " + debugEnabled);
+        } catch (Exception e) {
+            logger.logError("Error initializing debug mode: " + e.getMessage());
+            debugModeCheckBox.setSelected(false);
+            updateDebugStatus(false);
+        }
+    }
+
+    @FXML
+    private void toggleDebugMode() {
+        boolean debugEnabled = debugModeCheckBox.isSelected();
+        logger.logInfo("Toggling debug mode to: " + debugEnabled);
+
+        try {
+            Main.logger.switchDebugMode(debugEnabled);
+            // Update UI status
+            updateDebugStatus(debugEnabled);
+
+            logger.logInfo("Debug mode " + (debugEnabled ? "enabled" : "disabled") + " successfully.");
+        } catch (Exception e) {
+            logger.logError("Error toggling debug mode: " + e.getMessage());
+            debugStatus.setText("Error updating debug mode: " + e.getMessage());
+            debugStatus.getStyleClass().removeAll("success-label");
+            debugStatus.getStyleClass().add("error-label");
+        }
+    }
+
+    private void updateDebugStatus(boolean debugEnabled) {
+        debugStatus.getStyleClass().removeAll("error-label", "success-label");
+
+        if (debugEnabled) {
+            debugStatus.setText("Debug mode is ENABLED - Detailed logging active");
+            debugStatus.setTextFill(javafx.scene.paint.Color.ORANGE);
+            debugStatus.getStyleClass().add("warning-label");
+        } else {
+            debugStatus.setText("Debug mode is DISABLED - Normal logging active");
+            debugStatus.setTextFill(javafx.scene.paint.Color.GREEN);
+        }
     }
 
     @FXML
