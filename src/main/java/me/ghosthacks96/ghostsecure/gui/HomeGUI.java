@@ -1,11 +1,16 @@
 package me.ghosthacks96.ghostsecure.gui;
-
 // JavaFX imports
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
@@ -19,7 +24,11 @@ import me.ghosthacks96.ghostsecure.utils.controllers.Config;
 import me.ghosthacks96.ghostsecure.utils.controllers.ServiceController;
 
 // Java imports
+import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -64,6 +73,16 @@ public class HomeGUI {
     @FXML private TableColumn<LockedItem, Boolean> programCheckBox;
     @FXML private TableColumn<LockedItem, Boolean> programActionColumn;
     @FXML private TableColumn<LockedItem, String> programPathColumn;
+
+    @FXML
+    private Hyperlink appDataLink;
+
+    @FXML
+    private Hyperlink discordLink;
+
+    @FXML
+    private Hyperlink githubLink;
+
 
     // Observable lists for table data
     private static final ObservableList<LockedItem> folderItems = FXCollections.observableArrayList();
@@ -149,7 +168,7 @@ public class HomeGUI {
         logger.logInfo("Toggling debug mode to: " + debugEnabled);
 
         try {
-            Main.logger.switchDebugMode(debugEnabled);
+            Main.shiftDebug(debugEnabled);
             // Update UI status
             updateDebugStatus(debugEnabled);
 
@@ -164,7 +183,6 @@ public class HomeGUI {
 
     private void updateDebugStatus(boolean debugEnabled) {
         debugStatus.getStyleClass().removeAll("error-label", "success-label");
-
         if (debugEnabled) {
             debugStatus.setText("Debug mode is ENABLED - Detailed logging active");
             debugStatus.setTextFill(javafx.scene.paint.Color.ORANGE);
@@ -364,4 +382,185 @@ public class HomeGUI {
             logger.logError("Error changing password: " + e.getMessage());
         }
     }
+    @FXML
+    private void openAppDataFolder() {
+        try {
+            // Get the AppData path for your applicatiom
+            File appDataDir = new File(Main.appDataPath);
+
+            // Create directory if it doesn't exist
+            if (!appDataDir.exists()) {
+                appDataDir.mkdirs();
+            }
+
+            // Open the folder in Windows Explorer
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().open(appDataDir);
+            } else {
+                // Fallback method using ProcessBuilder
+                new ProcessBuilder("explorer.exe", Main.appDataPath).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Optionally show an error dialog to the user
+            System.err.println("Failed to open AppData folder: " + e.getMessage());
+        }
+    }
+
+    // Method to open Discord invite link
+    @FXML
+    private void openDiscordInvite() {
+        try {
+            String discordUrl = "https://discord.gg/Pn5U4whfnd";
+
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                Desktop.getDesktop().browse(new URI(discordUrl));
+            } else {
+                // Fallback method
+                new ProcessBuilder("cmd", "/c", "start", discordUrl).start();
+            }
+        } catch (IOException | URISyntaxException e) {
+            e.printStackTrace();
+            System.err.println("Failed to open Discord link: " + e.getMessage());
+        }
+    }
+
+    // Method to open GitHub repository
+    @FXML
+    private void openGitHubRepo() {
+        try {
+            String githubUrl = "https://github.com/ghosthacks96/ghostsecure";
+
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                Desktop.getDesktop().browse(new URI(githubUrl));
+            } else {
+                // Fallback method
+                new ProcessBuilder("cmd", "/c", "start", githubUrl).start();
+            }
+        } catch (IOException | URISyntaxException e) {
+            e.printStackTrace();
+            System.err.println("Failed to open GitHub link: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    public void exportSettings(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Settings");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Backup File", "*.GSBACKUP"));
+        File file = fileChooser.showSaveDialog(new Stage());
+        if (file != null) {
+            try {
+                if (file.createNewFile() || file.exists()) {
+                    // 1. Get decrypted config as JSON string
+                    String configJson = Config.gson.toJson(Config.config);
+
+                    // 2. Generate new salt
+                    byte[] newSalt = me.ghosthacks96.ghostsecure.utils.EncryptionUtils.generateSalt();
+
+                    // 3. Derive key from static password and random salt
+                    javax.crypto.SecretKey newKey = new javax.crypto.spec.SecretKeySpec(
+                        java.util.Arrays.copyOf(
+                            java.security.MessageDigest.getInstance("SHA-256").digest("ThisIsBuLLShit".getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                            32
+                        ),
+                        "AES"
+                    );
+
+                    // 4. Encrypt config JSON with new key
+                    String encrypted = me.ghosthacks96.ghostsecure.utils.EncryptionUtils.encrypt(configJson, newKey);
+
+                    // 5. Append salt to encrypted data with separator
+                    String exportData = encrypted + "!!_!!" + java.util.Base64.getEncoder().encodeToString(newSalt);
+
+                    // 6. Write to file
+                    java.nio.file.Files.writeString(file.toPath(), exportData);
+
+                    logger.logInfo("Settings exported successfully to " + file.getAbsolutePath());
+                } else {
+                    logger.logError("Failed to create the export file: " + file.getAbsolutePath());
+                }
+            } catch (Exception e) {
+                logger.logError("Failed to export settings: " + e.getMessage());
+            }
+        } else {
+            logger.logWarning("Export cancelled by user.");
+        }
+    }
+    
+    @FXML
+    public void importSettings(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Settings");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Backup File", "*.GSBACKUP"));
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            try {
+                String fileContent = java.nio.file.Files.readString(file.toPath());
+                String[] parts = fileContent.split("!!_!!");
+                if (parts.length != 2) {
+                    logger.logError("Invalid backup file format.");
+                    return;
+                }
+                String encrypted = parts[0];
+                byte[] salt = java.util.Base64.getDecoder().decode(parts[1]);
+
+                // Derive key from static password and salt
+                javax.crypto.SecretKey importKey = new javax.crypto.spec.SecretKeySpec(
+                    java.util.Arrays.copyOf(
+                        java.security.MessageDigest.getInstance("SHA-256").digest("ThisIsBuLLShit".getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                        32
+                    ),
+                    "AES"
+                );
+
+                // Decrypt config JSON
+                String decryptedJson = me.ghosthacks96.ghostsecure.utils.EncryptionUtils.decrypt(encrypted, importKey);
+                if (decryptedJson == null) {
+                    logger.logError("Failed to decrypt imported settings.");
+                    return;
+                }
+                JsonObject importedConfig = Config.gson.fromJson(decryptedJson, com.google.gson.JsonObject.class);
+
+                // Merge imported items, skipping duplicates
+                JsonArray importedPrograms = importedConfig.has("programs") ? importedConfig.getAsJsonArray("programs") : new JsonArray();
+                JsonArray importedFolders = importedConfig.has("folders") ? importedConfig.getAsJsonArray("folders") : new JsonArray();
+
+                JsonArray currentPrograms = Config.config.has("programs") ? Config.config.getAsJsonArray("programs") : new JsonArray();
+                JsonArray currentFolders = Config.config.has("folders") ? Config.config.getAsJsonArray("folders") : new JsonArray();
+
+                // Helper to check for duplicates
+                java.util.Set<String> programSet = new java.util.HashSet<>();
+                for (int i = 0; i < currentPrograms.size(); i++) programSet.add(currentPrograms.get(i).getAsString());
+                for (int i = 0; i < importedPrograms.size(); i++) {
+                    String entry = importedPrograms.get(i).getAsString();
+                    if (!programSet.contains(entry)) {
+                        currentPrograms.add(entry);
+                        programSet.add(entry);
+                    }
+                }
+
+                java.util.Set<String> folderSet = new java.util.HashSet<>();
+                for (int i = 0; i < currentFolders.size(); i++) folderSet.add(currentFolders.get(i).getAsString());
+                for (int i = 0; i < importedFolders.size(); i++) {
+                    String entry = importedFolders.get(i).getAsString();
+                    if (!folderSet.contains(entry)) {
+                        currentFolders.add(entry);
+                        folderSet.add(entry);
+                    }
+                }
+
+                Config.config.add("programs", currentPrograms);
+                Config.config.add("folders", currentFolders);
+                me.ghosthacks96.ghostsecure.utils.controllers.Config.saveConfig();
+                refreshTableData();
+                logger.logInfo("Settings imported successfully from " + file.getAbsolutePath());
+            } catch (Exception e) {
+                logger.logError("Failed to import settings: " + e.getMessage());
+            }
+        } else {
+            logger.logWarning("Import cancelled by user.");
+        }
+    }
 }
+

@@ -281,6 +281,33 @@
                         </VBox>
                     </VBox>
 
+                    <Separator>
+                        <style>
+                            -fx-background-color: #00d4ff40;
+                        </style>
+                    </Separator>
+                    <VBox spacing="15" alignment="CENTER" maxWidth="350">
+                        <Label text="Import/Export" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="18" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #ffffff;
+                            </style>
+                        </Label>
+                        <HBox spacing="15" alignment="CENTER">
+                            <Button fx:id="import" onAction="#importSettings" text="Import" prefWidth="180" prefHeight="45" styleClass="primary">
+                                <font>
+                                    <Font name="System Bold" size="12" />
+                                </font>
+                            </Button>
+                            <Button fx:id="export" onAction="#exportSettings" text="Export" prefWidth="180" prefHeight="45" styleClass="primary">
+                                <font>
+                                    <Font name="System Bold" size="12" />
+                                </font>
+                            </Button>
+                        </HBox>
+                    </VBox>
                     <!-- Separator -->
                     <Separator>
                         <style>
@@ -333,6 +360,231 @@
                         </VBox>
                     </VBox>
 
+                </VBox>
+            </Tab>
+            <!-- Add this tab after the Settings tab, before the closing </TabPane> -->
+            <Tab text="🛈 About" closable="false">
+                <VBox spacing="25" alignment="TOP_CENTER">
+                    <padding>
+                        <Insets top="35" bottom="35" left="35" right="35" />
+                    </padding>
+                    <style>
+                        -fx-background-color: #1e1e1ef2;
+                        -fx-background-radius: 0 0 12 12;
+                    </style>
+
+                    <!-- Header -->
+                    <VBox spacing="15" alignment="CENTER">
+                        <HBox spacing="15" alignment="CENTER">
+                            <Label text="👻" textAlignment="CENTER">
+                                <font>
+                                    <Font size="32" />
+                                </font>
+                            </Label>
+                            <Label text="GhostSecure v2.2.1" textAlignment="CENTER">
+                                <font>
+                                    <Font name="System Bold" size="24" />
+                                </font>
+                                <style>
+                                    -fx-text-fill: #00d4ff;
+                                    -fx-effect: dropshadow(gaussian, #00d4ff4d, 3, 0, 0, 0);
+                                </style>
+                            </Label>
+                        </HBox>
+
+                        <Label text="Desktop Security Application for File &amp; Program Protection" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="16" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #ffffff;
+                            </style>
+                        </Label>
+                    </VBox>
+
+                    <!-- Description -->
+                    <VBox spacing="20" alignment="CENTER" maxWidth="600">
+                        <Label text="About GhostSecure" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="20" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #00d4ff;
+                            </style>
+                        </Label>
+
+                        <Label text="GhostSecure is a powerful desktop security application built with JavaFX that allows you to protect your sensitive files, folders, and programs with password-protected access control. The application runs silently in your system tray, providing continuous protection while staying out of your way."
+                               textAlignment="CENTER" maxWidth="550" wrapText="true">
+                            <font>
+                                <Font size="14" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #b0b0b0;
+                                -fx-line-spacing: 2px;
+                            </style>
+                        </Label>
+                    </VBox>
+
+                    <!-- Features -->
+                    <VBox spacing="15" alignment="CENTER" maxWidth="500">
+                        <Label text="Key Features:" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="16" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #ffffff;
+                            </style>
+                        </Label>
+
+                        <HBox spacing="40" alignment="CENTER">
+                            <VBox spacing="8" alignment="CENTER">
+                                <Label text="🔒" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="20" />
+                                    </font>
+                                </Label>
+                                <Label text="File &amp; Folder Locking" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="12" />
+                                    </font>
+                                    <style>
+                                        -fx-text-fill: #b0b0b0;
+                                    </style>
+                                </Label>
+                            </VBox>
+
+                            <VBox spacing="8" alignment="CENTER">
+                                <Label text="🚫" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="20" />
+                                    </font>
+                                </Label>
+                                <Label text="Program Blocking" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="12" />
+                                    </font>
+                                    <style>
+                                        -fx-text-fill: #b0b0b0;
+                                    </style>
+                                </Label>
+                            </VBox>
+
+                            <VBox spacing="8" alignment="CENTER">
+                                <Label text="🌟" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="20" />
+                                    </font>
+                                </Label>
+                                <Label text="System Tray Integration" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="12" />
+                                    </font>
+                                    <style>
+                                        -fx-text-fill: #b0b0b0;
+                                    </style>
+                                </Label>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Separator -->
+                    <Separator maxWidth="400">
+                        <style>
+                            -fx-background-color: #00d4ff40;
+                        </style>
+                    </Separator>
+
+                    <!-- Links Section -->
+                    <VBox spacing="20" alignment="CENTER">
+                        <Label text="Quick Links" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="18" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #00d4ff;
+                            </style>
+                        </Label>
+
+                        <VBox spacing="15" alignment="CENTER">
+                            <!-- AppData Path -->
+                            <HBox spacing="10" alignment="CENTER">
+                                <Label text="📁" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="16" />
+                                    </font>
+                                </Label>
+                                <Hyperlink fx:id="appDataLink" onAction="#openAppDataFolder" text="Open Application Data Folder">
+                                    <font>
+                                        <Font size="14" />
+                                    </font>
+                                    <style>
+                                        -fx-text-fill: #00d4ff;
+                                    </style>
+                                </Hyperlink>
+                            </HBox>
+
+                            <!-- Discord Link -->
+                            <HBox spacing="10" alignment="CENTER">
+                                <Label text="💬" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="16" />
+                                    </font>
+                                </Label>
+                                <Hyperlink fx:id="discordLink" onAction="#openDiscordInvite" text="Join Discord Server">
+                                    <font>
+                                        <Font size="14" />
+                                    </font>
+                                    <style>
+                                        -fx-text-fill: #00d4ff;
+                                    </style>
+                                </Hyperlink>
+                            </HBox>
+
+                            <!-- GitHub Link -->
+                            <HBox spacing="10" alignment="CENTER">
+                                <Label text="💻" textAlignment="CENTER">
+                                    <font>
+                                        <Font size="16" />
+                                    </font>
+                                </Label>
+                                <Hyperlink fx:id="githubLink" onAction="#openGitHubRepo" text="View Source Code on GitHub">
+                                    <font>
+                                        <Font size="14" />
+                                    </font>
+                                    <style>
+                                        -fx-text-fill: #00d4ff;
+                                    </style>
+                                </Hyperlink>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+
+                    <!-- Footer -->
+                    <VBox spacing="10" alignment="CENTER">
+                        <Separator maxWidth="300">
+                            <style>
+                                -fx-background-color: #00d4ff40;
+                            </style>
+                        </Separator>
+
+                        <Label text="Made by GhostHacks96" textAlignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="14" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #ffffff;
+                            </style>
+                        </Label>
+
+                        <Label text="Desktop Security Application • Open Source • Community Driven" textAlignment="CENTER">
+                            <font>
+                                <Font size="12" />
+                            </font>
+                            <style>
+                                -fx-text-fill: #b0b0b0;
+                            </style>
+                        </Label>
+                    </VBox>
                 </VBox>
             </Tab>
         </TabPane>

@@ -186,6 +186,7 @@ public class DebugConsole {
 
     public void hideConsole() {
         consoleStage.hide();
+        consoleStage.close();
     }
 
     public void clearConsole() {
