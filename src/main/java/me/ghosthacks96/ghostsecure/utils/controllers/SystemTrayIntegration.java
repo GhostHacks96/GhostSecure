@@ -43,11 +43,15 @@ public class SystemTrayIntegration {
             if (primaryStage != null) {
                 if (Main.sgh.openLoginScene()) {
                     logger.logDebug("Login successful from tray restore");
-                    Platform.runLater(() -> {
-                        FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
-                        HomeGUI controller = loader.getController();
-                        controller.updateServiceStatus();
-                    });
+                    // Use the existing HomeGUI controller from the mainLoader
+                    try {
+                        HomeGUI controller = Main.mainLoader.getController();
+                        if (controller != null) {
+                            controller.updateServiceStatus();
+                        }
+                    } catch (Exception ex) {
+                        logger.logError("Failed to update HomeGUI from tray: " + ex.getMessage());
+                    }
                     primaryStage.show();
                     primaryStage.toFront();
                 } else {
@@ -70,9 +74,14 @@ public class SystemTrayIntegration {
                         Main.config.getJsonConfig().addProperty("mode", "lock");
                     }
                     Config.saveConfig();
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
-                    HomeGUI controller = loader.getController();
-                    controller.updateServiceStatus();
+                    try {
+                        HomeGUI controller = Main.mainLoader.getController();
+                        if (controller != null) {
+                            controller.updateServiceStatus();
+                        }
+                    } catch (Exception ex) {
+                        logger.logError("Failed to update HomeGUI from tray: " + ex.getMessage());
+                    }
                     logger.logInfo("Locking service started.");
                 } else {
                     logger.logDebug("Login failed for start service");
@@ -84,6 +93,7 @@ public class SystemTrayIntegration {
                 Main.logger.logWarning("Start requested, but the service is already running.");
             }
         }));
+        popupMenu.add(starterItem);
 
         MenuItem stopperItem = new MenuItem("Stop Service");
         stopperItem.addActionListener(e -> Platform.runLater(() -> {
@@ -97,11 +107,14 @@ public class SystemTrayIntegration {
                         Main.config.getJsonConfig().addProperty("mode", "unlock");
                     }
                     Config.saveConfig();
-                    Platform.runLater(() -> {
-                        FXMLLoader loader = new FXMLLoader(getClass().getResource("home.fxml"));
-                        HomeGUI controller = loader.getController();
-                        controller.updateServiceStatus();
-                    });
+                    try {
+                        HomeGUI controller = Main.mainLoader.getController();
+                        if (controller != null) {
+                            controller.updateServiceStatus();
+                        }
+                    } catch (Exception ex) {
+                        logger.logError("Failed to update HomeGUI from tray: " + ex.getMessage());
+                    }
                     logger.logInfo("Locking service stopped.");
                 } else {
                     logger.logDebug("Login failed for stop service");
@@ -113,53 +126,16 @@ public class SystemTrayIntegration {
                 Main.logger.logWarning("Stop requested, but the service is not running.");
             }
         }));
-
-        popupMenu.add(starterItem);
         popupMenu.add(stopperItem);
 
-        // Exit menu item
-        MenuItem exitItem = new MenuItem("Exit");
-        exitItem.addActionListener(e -> Platform.runLater(() -> {
-            logger.logDebug("Exit menu item clicked");
-            if (Main.sgh.openLoginScene()) {
-                logger.logDebug("Login successful for exit");
-                while (ServiceController.killDaemon()) {
-                    // Loop until the service is fully shut down
-                }
-                Main.logger.onShutdown();
-                System.exit(0);
-            } else {
-                logger.logDebug("Login failed for exit");
-                Main.sgh.showError("No", "Are you sure you're supposed to be messing with this?");
-            }
-        }));
-        popupMenu.add(exitItem);
-
-        // Create the tray icon
+        // Add the popup menu to the tray icon and add the icon to the system tray
         trayIcon = new TrayIcon(trayImage, "GhostSecure", popupMenu);
         trayIcon.setImageAutoSize(true);
-
-        // Add the tray icon to the system tray
         try {
             SystemTray.getSystemTray().add(trayIcon);
-            logger.logDebug("Tray icon added to system tray");
         } catch (AWTException e) {
-            logger.logDebug("Unable to add tray icon: " + e.getMessage());
-            logger.logError("Unable to add tray icon", e);
+            logger.logError("Failed to add tray icon: " + e.getMessage());
         }
-
-        // Minimize to tray on close request
-        primaryStage.setOnCloseRequest(event -> {
-            logger.logDebug("Primary stage close request");
-            if (ServiceController.isServiceRunning()) {
-                event.consume();
-                Platform.runLater(primaryStage::hide);
-            }else{
-                event.consume();
-                Main.logger.onShutdown();
-                Main.sgh.showInfo("Exiting GhostSecure", "Exiting application.");
-                System.exit(0);
-            }
-        });
     }
 }
+

@@ -9,6 +9,7 @@ import me.ghosthacks96.ghostsecure.utils.controllers.SubGUIHandler;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -143,19 +144,9 @@ public class RecoveryHandler {
             logger.logDebug("JSON payload: " + jsonData);
 
             // Use HttpURLConnection like the Update class
-            URL url = new URL(RECOVERY_API_URL);
+            URL url = URI.create(RECOVERY_API_URL).toURL();
             logger.logDebug("API URL: " + RECOVERY_API_URL);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-            // Set request properties - matching Update class exactly
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("User-Agent", "GhostSecure/1.0");
-            connection.setDoOutput(true);
-            connection.setConnectTimeout(CONNECT_TIMEOUT_SECONDS);
-            connection.setReadTimeout(REQUEST_TIMEOUT_SECONDS);
-
+            HttpURLConnection connection = getConnection(url);
             logger.logDebug("Sending request to: " + RECOVERY_API_URL);
 
             // Send request
@@ -279,6 +270,19 @@ public class RecoveryHandler {
             sgh.showError("Recovery Error", "An unexpected error occurred. Please contact support.");
             return false;
         }
+    }
+    private static HttpURLConnection getConnection(URL url) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        // Set request properties - matching Update class exactly
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("User-Agent", "GhostSecure/1.0");
+        connection.setDoOutput(true);
+        connection.setConnectTimeout(CONNECT_TIMEOUT_SECONDS);
+        connection.setReadTimeout(REQUEST_TIMEOUT_SECONDS);
+        return connection;
     }
 
     /**

@@ -2,6 +2,7 @@ package me.ghosthacks96.ghostsecure.utils;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Paths;
 import com.google.gson.Gson;
@@ -25,7 +26,7 @@ public class Update {
 
             updateUpdaterFile();
 
-            launchUpdater();
+            boolean u = launchUpdater();
             Main.logger.logDebug("Update available - application will exit now");
             System.exit(0);
         }
@@ -34,7 +35,7 @@ public class Update {
     public void updateUpdaterFile(){
         Main.logger.logDebug("updateUpdaterFile() called");
         try {
-            URL downloadUrl = new URL("https://ghosthacks96.me/site/downloads/GhostUpdate.exe");
+            URL downloadUrl = URI.create("https://ghosthacks96.me/site/downloads/GhostUpdate.exe").toURL();
             Main.logger.logDebug("Downloading updater from: " + downloadUrl);
             java.nio.file.Path targetPath = java.nio.file.Paths.get(UPDATER_PATH);
             try (java.io.InputStream in = downloadUrl.openStream()) {
@@ -56,9 +57,6 @@ public class Update {
         public boolean update_available;
         public String latest_version;
         public String current_version;
-        public String download_url;
-        public String release_url;
-        public String published_at;
 
         public String toString() {
             return String.format("UpdateResponse{update_available=%s, latest_version='%s', current_version='%s'}",
@@ -74,7 +72,7 @@ public class Update {
         Main.logger.logDebug("checkForUpdates() called");
         Main.logger.logDebug("Checking for updates...");
         try {
-            URL url = new URL(API_URL);
+            URL url = URI.create(API_URL).toURL();
             Main.logger.logDebug("API URL: " + API_URL);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 

@@ -11,10 +11,10 @@ repositories {
 }
 
 dependencies {
-    // Use the correct version of dependencies compatible with Java 24
-    implementation "org.openjfx:javafx-controls:24"
-    implementation "org.openjfx:javafx-fxml:24"
-    implementation "org.openjfx:javafx-graphics:24"
+    // Use JavaFX 21 which is stable and available
+    implementation "org.openjfx:javafx-controls:21"
+    implementation "org.openjfx:javafx-fxml:21"
+    implementation 'org.openjfx:javafx-graphics:21.0.2'
 
     // Other dependencies remain
     implementation 'org.kordamp.bootstrapfx:bootstrapfx-core:0.4.0'
@@ -22,15 +22,15 @@ dependencies {
 }
 
 java {
-    // Update Java toolchain to target Java 24
+    // Use Java 21 (LTS) which is widely available and stable
     toolchain {
-        languageVersion = JavaLanguageVersion.of(24) // Ensures compatibility with Java 24
+        languageVersion = JavaLanguageVersion.of(21) // Compatible with GitHub Actions
     }
 
     modularity.inferModulePath = true // Enable module path inference
 }
 javafx {
-    version = '24' // Use OpenJFX version 21
+    version = '21' // Use OpenJFX version 21 (matches Java version)
     modules = [ 'javafx.base','javafx.controls', 'javafx.fxml' ] // Include required JavaFX modules
 }
 
@@ -59,5 +59,76 @@ jlink {
         version = '2.0.0'
         icon = file('src/main/resources/me/ghosthacks96/ghostsecure/app_icon.ico')
 
+    }
+}
+
+// Fixed zipJpackageImage task
+tasks.register('zipJpackageImage', Zip) {
+    dependsOn 'jpackageImage'
+    description = 'Creates a zip file containing the jpackage image (runtime and app folders)'
+    group = 'distribution'
+
+    // Set the archive name with application name only (no version)
+    archiveBaseName = 'GhostSecure'
+    archiveVersion = '' // Empty string to exclude version from filename
+    archiveExtension = 'zip'
+    destinationDirectory = layout.buildDirectory.dir("distributions")
+
+    // Configure the source dynamically to ensure the directory exists
+    from(layout.buildDirectory.dir("jpackage/GhostSecure")) {
+        // Only include if the directory exists
+        onlyIf {
+            layout.buildDirectory.dir("jpackage/GhostSecure").get().asFile.exists()
+        }
+    }
+
+    // Log information about the task
+    doFirst {
+        def jpackageImageDir = layout.buildDirectory.dir("jpackage/GhostSecure").get().asFile
+        println "Creating zip file of jpackage image from: ${jpackageImageDir}"
+        println "Zip file will be created at: ${destinationDirectory.get().asFile}/${archiveFileName.get()}"
+
+        // Verify the source directory exists
+        if (!jpackageImageDir.exists()) {
+            throw new GradleException("Jpackage image directory does not exist: ${jpackageImageDir}")
+        }
+
+        // List contents for debugging
+        println "Contents of jpackage directory:"
+        jpackageImageDir.listFiles()?.each { file ->
+            println "  - ${file.name} (${file.isDirectory() ? 'directory' : 'file'})"
+        }
+    }
+
+    doLast {
+        println "Successfully created zip file: ${destinationDirectory.get().asFile}/${archiveFileName.get()}"
+    }
+}
+
+// Make jpackageImage task finalize with zipJpackageImage to automatically create the zip file
+tasks.named('jpackageImage').configure {
+    finalizedBy('zipJpackageImage')
+}
+
+/**
+ * Convenience task to create both the jpackage image and zip file in one step.
+ * This is the recommended way to create a distribution.
+ *
+ * To run this task:
+ * ./gradlew createDistribution
+ *
+ * This will:
+ * 1. Create the jpackage image in build/jpackage/GhostSecure
+ * 2. Create a zip file of the image in build/distributions/GhostSecure.zip
+ */
+tasks.register('createDistribution') {
+    description = 'Creates the jpackage image and zips it'
+    group = 'distribution'
+    dependsOn 'jpackageImage'
+
+    doLast {
+        println "Distribution created successfully!"
+        println "Jpackage image: ${layout.buildDirectory.dir("jpackage/GhostSecure").get().asFile}"
+        println "Zip file: ${layout.buildDirectory.dir("distributions").get().asFile}/GhostSecure.zip"
     }
 }

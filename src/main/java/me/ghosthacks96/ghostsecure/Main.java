@@ -11,7 +11,6 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import me.ghosthacks96.ghostsecure.gui.HomeGUI;
 import me.ghosthacks96.ghostsecure.gui.SplashGUI;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
 import me.ghosthacks96.ghostsecure.utils.RecoveryHandler;
@@ -50,8 +49,6 @@ public class Main extends Application {
     public static boolean DEBUG_MODE = false;
     public static String VERSION = "2.3.5";
 
-    // Splash screen components
-    private static Stage splashStage;
     private static SplashGUI splashController;
 
     public static void main(String[] args) {
@@ -72,7 +69,8 @@ public class Main extends Application {
 
         splashController = splashLoader.getController();
 
-        splashStage = new Stage();
+        // Splash screen components
+        Stage splashStage = new Stage();
         splashStage.initStyle(StageStyle.UNDECORATED);
         splashStage.setScene(splashScene);
         splashStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png")).toExternalForm()));
@@ -306,17 +304,14 @@ public class Main extends Application {
                     mainScene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/dark-theme.css")).toExternalForm());
                     mainStage.setTitle("Ghost Secure - Home");
                     mainStage.setScene(mainScene);
-
                     mainStage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png")).toExternalForm()));
                     mainStage.initStyle(StageStyle.DECORATED);
 
-                    // Close splash screen
+                    // Always show the main stage after setup or login
                     splashController.close();
-
-                    if (!ServiceController.isServiceRunning() && loginSuccessful) {
-                        mainStage.show();
-                        logger.logInfo("Main stage displayed successfully.");
-                    }
+                    mainStage.show();
+                    mainStage.toFront();
+                    logger.logInfo("Main stage displayed successfully.");
 
                     SystemTrayIntegration sysTray = new SystemTrayIntegration();
                     sysTray.setupSystemTray(mainStage);

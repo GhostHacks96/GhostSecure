@@ -286,7 +286,9 @@
                             -fx-background-color: #00d4ff40;
                         </style>
                     </Separator>
-                    <VBox spacing="15" alignment="CENTER" maxWidth="350">
+
+                    <!-- Import/Export Section -->
+                    <VBox spacing="20" alignment="CENTER">
                         <Label text="Import/Export" textAlignment="CENTER">
                             <font>
                                 <Font name="System Bold" size="18" />
@@ -308,6 +310,7 @@
                             </Button>
                         </HBox>
                     </VBox>
+
                     <!-- Separator -->
                     <Separator>
                         <style>
