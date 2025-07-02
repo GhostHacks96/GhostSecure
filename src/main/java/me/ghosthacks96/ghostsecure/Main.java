@@ -56,6 +56,15 @@ public class Main extends Application {
         logger.logInfo("Application started.");
         logger.logInfo("Initializing GhostSecure... v"+VERSION);
 
+
+        if(new File(appDataPath+File.pathSeparator+"debug.txt").exists()){
+            DEBUG_MODE = true;
+            logger.logInfo("Debug mode is enabled.");
+        } else {
+            DEBUG_MODE = false;
+            logger.logInfo("Debug mode is disabled.");
+        }
+
         launch();
     }
 
@@ -168,7 +177,10 @@ public class Main extends Application {
                     return CompletableFuture.supplyAsync(() -> {
                         try {
                             updateSplashMessage("Checking for updates...");
-                            new Update("GhostSecure", VERSION);
+                            Update u =new Update("GhostSecure", VERSION);
+                            if(u.updateCheck()){
+                                System.exit(0);
+                            }
                             return null;
                         } catch (Exception e) {
                             logger.logError("Error checking for updates: " + e.getMessage(), e);

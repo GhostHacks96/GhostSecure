@@ -56,7 +56,6 @@ jlink {
         installerType = 'exe' // For Windows (or 'dmg' for macOS, 'deb' or 'rpm' for Linux)
         jvmArgs = ['--enable-preview'] // JVM arguments for the packaged runtime
         imageName = 'GhostSecure'
-        version = '2.0.0'
         icon = file('src/main/resources/me/ghosthacks96/ghostsecure/app_icon.ico')
 
     }

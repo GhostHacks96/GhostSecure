@@ -20,24 +20,38 @@ public class Update {
         Main.logger.logDebug("Update constructor called with appName=" + appName + ", currentVersion=" + currentVersion);
         APP_NAME = appName;
         CURRENT_VERSION = currentVersion;
+    }
+
+    public boolean updateCheck(){
         UpdateResponse response = checkForUpdates();
         Main.logger.logDebug("Update checkForUpdates() response: " + response);
         if(response != null && response.update_available){
 
             updateUpdaterFile();
-
-            boolean u = launchUpdater();
             Main.logger.logDebug("Update available - application will exit now");
-            System.exit(0);
+            boolean t = launchUpdater();
+            if(t){
+                Main.logger.logDebug("Updater launched successfully, application will exit now");
+                // Exit the application
+                return true;
+            } else {
+                Main.logger.logError("Failed to launch updater, application will not exit");
+            }
         }
+        return false;
     }
-    
+
     public void updateUpdaterFile(){
         Main.logger.logDebug("updateUpdaterFile() called");
         try {
             URL downloadUrl = URI.create("https://ghosthacks96.me/site/downloads/GhostUpdate.exe").toURL();
             Main.logger.logDebug("Downloading updater from: " + downloadUrl);
             java.nio.file.Path targetPath = java.nio.file.Paths.get(UPDATER_PATH);
+            // Ensure parent directory exists
+            java.nio.file.Path parentDir = targetPath.getParent();
+            if (parentDir != null && !java.nio.file.Files.exists(parentDir)) {
+                java.nio.file.Files.createDirectories(parentDir);
+            }
             try (java.io.InputStream in = downloadUrl.openStream()) {
                 java.nio.file.Files.copy(in, targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
@@ -57,6 +71,9 @@ public class Update {
         public boolean update_available;
         public String latest_version;
         public String current_version;
+        public String download_url;
+        public String release_url;
+        public String published_at;
 
         public String toString() {
             return String.format("UpdateResponse{update_available=%s, latest_version='%s', current_version='%s'}",
@@ -185,7 +202,7 @@ public class Update {
                     APP_NAME,
                     CURRENT_VERSION,
                     debug
-            }, null, Paths.get(updaterFile.getAbsolutePath()).toFile());
+            }, null, new File(updaterFile.getParent()));
             Main.logger.logDebug("Updater process started");
             Main.logger.logDebug("Updater launched successfully with PID: " + process.pid());
             return true;
