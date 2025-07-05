@@ -1,5 +1,4 @@
 package me.ghosthacks96.ghostsecure.gui;
-// JavaFX imports
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -13,23 +12,25 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-
-// Application imports
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
+import me.ghosthacks96.ghostsecure.utils.EncryptionUtils;
 import me.ghosthacks96.ghostsecure.utils.controllers.Config;
 import me.ghosthacks96.ghostsecure.utils.controllers.ServiceController;
 
-// Java imports
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static me.ghosthacks96.ghostsecure.Main.logger;
@@ -39,57 +40,120 @@ import static me.ghosthacks96.ghostsecure.Main.logger;
  */
 public class HomeGUI {
 
+    // Constants
+    private static final String BACKUP_EXTENSION = "*.GSBACKUP";
+    private static final String EXPORT_SEPARATOR = "!!_!!";
+    private static final String STATIC_BACKUP_PASSWORD = "ThisIsBuLLShit";
+    private static final int MIN_PASSWORD_LENGTH = 4;
+
+    // UI Components - Program Management
     @FXML public Button addProgramButton;
     @FXML public Button removeProgramButton;
     @FXML public Button switchProgramLock;
+
+    // UI Components - Folder Management
     @FXML public Button addFolderButton;
     @FXML public Button removeFolderButton;
     @FXML public Button switchFolderLock;
 
-    // UI Components
+    // UI Components - Service Control
     @FXML private Button startServiceButton;
     @FXML private Button stopServiceButton;
     @FXML private Label lockStatus;
 
-    // Settings Components
+    // UI Components - Settings
     @FXML private PasswordField currentPasswordField;
     @FXML private PasswordField newPasswordField;
     @FXML private PasswordField confirmPasswordField;
     @FXML private Label passwordChangeStatus;
 
-    // Debug Components
+    // UI Components - Debug
     @FXML private CheckBox debugModeCheckBox;
     @FXML private Label debugStatus;
 
-    // Table components - Folders
+    // UI Components - Links
+    @FXML private Hyperlink appDataLink;
+    @FXML private Hyperlink discordLink;
+    @FXML private Hyperlink githubLink;
+
+    // Table Components - Folders
     @FXML private TableView<LockedItem> folderTable;
     @FXML private TableColumn<LockedItem, Boolean> folderCheckBox;
     @FXML private TableColumn<LockedItem, String> folderNameColumn;
     @FXML private TableColumn<LockedItem, String> folderPathColumn;
     @FXML private TableColumn<LockedItem, Boolean> folderStatusColumn;
 
-    // Table components - Programs
+    // Table Components - Programs
     @FXML private TableView<LockedItem> programTable;
     @FXML private TableColumn<LockedItem, Boolean> programCheckBox;
     @FXML private TableColumn<LockedItem, Boolean> programActionColumn;
     @FXML private TableColumn<LockedItem, String> programPathColumn;
 
-    @FXML
-    private Hyperlink appDataLink;
-
-    @FXML
-    private Hyperlink discordLink;
-
-    @FXML
-    private Hyperlink githubLink;
-
-
     // Observable lists for table data
     private static final ObservableList<LockedItem> folderItems = FXCollections.observableArrayList();
     private static final ObservableList<LockedItem> programItems = FXCollections.observableArrayList();
 
+    // ===============================
+    // INITIALIZATION METHODS
+    // ===============================
+
+    @FXML
+    public void initialize() {
+        logger.logInfo("Initializing homeGUI.");
+
+        setupTables();
+        initializeDebugMode();
+        refreshTableData();
+        bindTableData();
+        updateServiceStatus();
+
+        logger.logInfo("HomeGUI initialization complete.");
+    }
+
+    private void setupTables() {
+        setupFolderTable();
+        setupProgramTable();
+    }
+
+    private void setupFolderTable() {
+        folderTable.setSelectionModel(null);
+        folderTable.setEditable(true);
+
+        folderCheckBox.setCellValueFactory(cellData -> cellData.getValue().isSelectedProperty());
+        folderCheckBox.setCellFactory(column -> createCheckBoxCell());
+        folderNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        folderPathColumn.setCellValueFactory(new PropertyValueFactory<>("path"));
+        folderStatusColumn.setCellValueFactory(cellData -> cellData.getValue().isLockedProperty());
+    }
+
+    private void setupProgramTable() {
+        programTable.setSelectionModel(null);
+        programTable.setEditable(true);
+
+        programCheckBox.setCellValueFactory(cellData -> cellData.getValue().isSelectedProperty());
+        programCheckBox.setCellFactory(column -> createCheckBoxCell());
+        programPathColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        programActionColumn.setCellValueFactory(cellData -> cellData.getValue().isLockedProperty());
+    }
+
+    private CheckBoxTableCell<LockedItem, Boolean> createCheckBoxCell() {
+        CheckBoxTableCell<LockedItem, Boolean> checkBoxCell = new CheckBoxTableCell<>();
+        checkBoxCell.setEditable(true);
+        return checkBoxCell;
+    }
+
+    private void bindTableData() {
+        folderTable.setItems(folderItems);
+        programTable.setItems(programItems);
+    }
+
+    // ===============================
+    // DATA MANAGEMENT METHODS
+    // ===============================
+
     public static void refreshTableData() {
         logger.logInfo("Refreshing table data.");
+
         folderItems.setAll(Main.lockedItems.stream()
                 .filter(item -> !item.getPath().endsWith(".exe"))
                 .collect(Collectors.toList()));
@@ -99,59 +163,161 @@ public class HomeGUI {
                 .collect(Collectors.toList()));
     }
 
+    // ===============================
+    // FOLDER MANAGEMENT METHODS
+    // ===============================
+
     @FXML
-    public void initialize() {
-        logger.logInfo("Initializing homeGUI.");
+    private void addFolder() {
+        logger.logInfo("Adding a folder to be locked.");
 
-        // Disable row selection for tables
-        folderTable.setSelectionModel(null);
-        programTable.setSelectionModel(null);
+        File selectedDirectory = new javafx.stage.DirectoryChooser().showDialog(new Stage());
+        if (selectedDirectory == null) {
+            logger.logWarning("No folder was selected to add.");
+            return;
+        }
 
-        // Folder table setup
-        folderCheckBox.setCellValueFactory(cellData -> cellData.getValue().isSelectedProperty());
-        folderCheckBox.setCellFactory(column -> {
-            CheckBoxTableCell<LockedItem, Boolean> checkBoxCell = new CheckBoxTableCell<>();
-            checkBoxCell.setEditable(true);
-            return checkBoxCell;
-        });
+        LockedItem lockedFolder = new LockedItem(
+                selectedDirectory.getAbsolutePath(),
+                selectedDirectory.getName(),
+                true
+        );
 
-        folderNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        folderPathColumn.setCellValueFactory(new PropertyValueFactory<>("path"));
-        folderStatusColumn.setCellValueFactory(cellData -> cellData.getValue().isLockedProperty());
-        folderTable.setEditable(true);
-
-        // Program table setup
-        programCheckBox.setCellValueFactory(cellData -> cellData.getValue().isSelectedProperty());
-        programCheckBox.setCellFactory(column -> {
-            CheckBoxTableCell<LockedItem, Boolean> checkBoxCell = new CheckBoxTableCell<>();
-            checkBoxCell.setEditable(true);
-            return checkBoxCell;
-        });
-
-        programPathColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        programActionColumn.setCellValueFactory(cellData -> cellData.getValue().isLockedProperty());
-        programTable.setEditable(true);
-
-        // Initialize debug checkbox state
-        initializeDebugMode();
-
-        // Populate initial data
+        Main.lockedItems.add(lockedFolder);
+        Config.saveConfig();
         refreshTableData();
-        folderTable.setItems(folderItems);
-        programTable.setItems(programItems);
-
-        // Update UI
-        updateServiceStatus();
+        logger.logInfo("Added folder: " + selectedDirectory.getName());
     }
+
+    @FXML
+    private void removeFolder() {
+        logger.logInfo("Removing selected folders.");
+
+        List<LockedItem> selectedFolders = getSelectedItems(folderItems);
+        removeItemsAndSave(selectedFolders, "folder");
+    }
+
+    @FXML
+    private void swapFLockStatus() {
+        logger.logInfo("Toggling lock status for selected folders.");
+        toggleLockStatusForSelectedItems(folderItems, "folder");
+    }
+
+    // ===============================
+    // PROGRAM MANAGEMENT METHODS
+    // ===============================
+
+    @FXML
+    private void addProgram() {
+        logger.logInfo("Adding a program to be locked.");
+
+        File selectedFile = selectExecutableFile();
+        if (selectedFile == null) {
+            logger.logWarning("No program was selected to add.");
+            return;
+        }
+
+        LockedItem lockedProgram = new LockedItem(
+                selectedFile.getAbsolutePath(),
+                selectedFile.getName(),
+                true
+        );
+
+        Main.lockedItems.add(lockedProgram);
+        Config.saveConfig();
+        refreshTableData();
+        logger.logInfo("Added program: " + selectedFile.getName());
+    }
+
+    @FXML
+    private void removeProgram() {
+        logger.logInfo("Removing selected programs.");
+
+        List<LockedItem> selectedPrograms = getSelectedItems(programItems);
+        removeItemsAndSave(selectedPrograms, "program");
+    }
+
+    @FXML
+    private void swapPLockStatus() {
+        logger.logInfo("Toggling lock status for selected programs.");
+        toggleLockStatusForSelectedItems(programItems, "program");
+    }
+
+    private File selectExecutableFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Program to Lock");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Executable Files", "*.exe")
+        );
+        return fileChooser.showOpenDialog(new Stage());
+    }
+
+    // ===============================
+    // SERVICE CONTROL METHODS
+    // ===============================
+
+    @FXML
+    public void startService() {
+        logger.logInfo("Starting locking service.");
+
+        setServiceMode("lock");
+        Config.saveConfig();
+        Platform.runLater(this::updateServiceStatus);
+
+        logger.logInfo("Locking service started.");
+    }
+
+    @FXML
+    public void stopService() {
+        logger.logInfo("Stopping locking service.");
+
+        setServiceMode("unlock");
+        Config.saveConfig();
+        Platform.runLater(this::updateServiceStatus);
+
+        logger.logInfo("Locking service stopped.");
+    }
+
+    public void updateServiceStatus() {
+        boolean isRunning = ServiceController.isServiceRunning();
+        logger.logInfo("Updating service status to " + (isRunning ? "RUNNING" : "STOPPED"));
+
+        if (isRunning) {
+            setServiceRunningUI();
+            if (!ServiceController.isServiceRunning()) {
+                ServiceController.startBlockerDaemon();
+            }
+        } else {
+            setServiceStoppedUI();
+        }
+    }
+
+    private void setServiceMode(String mode) {
+        Main.config.getJsonConfig().remove("mode");
+        Main.config.getJsonConfig().addProperty("mode", mode);
+    }
+
+    private void setServiceRunningUI() {
+        startServiceButton.setDisable(true);
+        stopServiceButton.setDisable(false);
+        lockStatus.setText("Locking Engaged");
+        lockStatus.setTextFill(javafx.scene.paint.Color.GREEN);
+    }
+
+    private void setServiceStoppedUI() {
+        startServiceButton.setDisable(false);
+        stopServiceButton.setDisable(true);
+        lockStatus.setText("Locking Disabled");
+        lockStatus.setTextFill(javafx.scene.paint.Color.RED);
+    }
+
+    // ===============================
+    // DEBUG MODE METHODS
+    // ===============================
 
     private void initializeDebugMode() {
         try {
-            // Check if debug mode is enabled in config
-            boolean debugEnabled = false;
-            if (Main.config.getJsonConfig().has("debugMode")) {
-                debugEnabled = Main.config.getJsonConfig().get("debugMode").getAsBoolean();
-            }
-
+            boolean debugEnabled = getDebugModeFromConfig();
             debugModeCheckBox.setSelected(debugEnabled);
             updateDebugStatus(debugEnabled);
             logger.logInfo("Debug mode initialized: " + debugEnabled);
@@ -169,20 +335,24 @@ public class HomeGUI {
 
         try {
             Main.shiftDebug(debugEnabled);
-            // Update UI status
             updateDebugStatus(debugEnabled);
-
             logger.logInfo("Debug mode " + (debugEnabled ? "enabled" : "disabled") + " successfully.");
         } catch (Exception e) {
             logger.logError("Error toggling debug mode: " + e.getMessage());
-            debugStatus.setText("Error updating debug mode: " + e.getMessage());
-            debugStatus.getStyleClass().removeAll("success-label");
-            debugStatus.getStyleClass().add("error-label");
+            showDebugError("Error updating debug mode: " + e.getMessage());
         }
+    }
+
+    private boolean getDebugModeFromConfig() {
+        if (Main.config.getJsonConfig().has("debugMode")) {
+            return Main.config.getJsonConfig().get("debugMode").getAsBoolean();
+        }
+        return false;
     }
 
     private void updateDebugStatus(boolean debugEnabled) {
         debugStatus.getStyleClass().removeAll("error-label", "success-label");
+
         if (debugEnabled) {
             debugStatus.setText("Debug mode is ENABLED - Detailed logging active");
             debugStatus.setTextFill(javafx.scene.paint.Color.ORANGE);
@@ -193,374 +363,345 @@ public class HomeGUI {
         }
     }
 
-    @FXML
-    private void addFolder() {
-        logger.logInfo("Adding a folder to be locked.");
-        File selectedDirectory = new javafx.stage.DirectoryChooser().showDialog(new Stage());
-        if (selectedDirectory != null) {
-            LockedItem lockedFolder = new LockedItem(selectedDirectory.getAbsolutePath(), selectedDirectory.getName(), true);
-            Main.lockedItems.add(lockedFolder);
-            Config.saveConfig();
-            refreshTableData();
-            logger.logInfo("Added folder: " + selectedDirectory.getName());
-        } else {
-            logger.logWarning("No folder was selected to add.");
-        }
+    private void showDebugError(String message) {
+        debugStatus.setText(message);
+        debugStatus.getStyleClass().removeAll("success-label");
+        debugStatus.getStyleClass().add("error-label");
     }
 
-    @FXML
-    private void removeFolder() {
-        logger.logInfo("Removing selected folders.");
-        List<LockedItem> selectedFolders = folderItems.stream().filter(LockedItem::isSelected).toList();
-        Main.lockedItems.removeAll(selectedFolders);
-        Config.saveConfig();
-        refreshTableData();
-        selectedFolders.forEach(item -> logger.logInfo("Removed folder: " + item.getName()));
-    }
-
-    @FXML
-    private void addProgram() {
-        logger.logInfo("Adding a program to be locked.");
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Select Program to Lock");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Executable Files", "*.exe"));
-        File selectedFile = fileChooser.showOpenDialog(new Stage());
-        if (selectedFile != null) {
-            LockedItem lockedProgram = new LockedItem(selectedFile.getAbsolutePath(), selectedFile.getName(), true);
-            Main.lockedItems.add(lockedProgram);
-            Config.saveConfig();
-            refreshTableData();
-            logger.logInfo("Added program: " + selectedFile.getName());
-        } else {
-            logger.logWarning("No program was selected to add.");
-        }
-    }
-
-    @FXML
-    private void removeProgram() {
-        logger.logInfo("Removing selected programs.");
-        List<LockedItem> selectedPrograms = programItems.stream().filter(LockedItem::isSelected).toList();
-        Main.lockedItems.removeAll(selectedPrograms);
-        Config.saveConfig();
-        refreshTableData();
-        selectedPrograms.forEach(item -> logger.logInfo("Removed program: " + item.getName()));
-    }
-
-    @FXML
-    public void startService() {
-        logger.logInfo("Starting locking service.");
-        if (Main.config.getJsonConfig().get("mode").getAsString().equals("unlock")) {
-            Main.config.getJsonConfig().remove("mode");
-            Main.config.getJsonConfig().addProperty("mode", "lock");
-        }
-        Config.saveConfig();
-        Platform.runLater(this::updateServiceStatus);
-        logger.logInfo("Locking service started.");
-    }
-
-    @FXML
-    public void stopService() {
-        logger.logInfo("Stopping locking service.");
-        if (Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
-            Main.config.getJsonConfig().remove("mode");
-            Main.config.getJsonConfig().addProperty("mode", "unlock");
-        }
-        Config.saveConfig();
-        Platform.runLater(this::updateServiceStatus);
-        logger.logInfo("Locking service stopped.");
-    }
-
-    public void updateServiceStatus() {
-        boolean isRunning = ServiceController.isServiceRunning();
-        logger.logInfo("Updating service status to " + (isRunning ? "RUNNING" : "STOPPED"));
-        if (isRunning) {
-            startServiceButton.setDisable(true);
-            stopServiceButton.setDisable(false);
-            lockStatus.setText("Locking Engaged");
-            lockStatus.setTextFill(javafx.scene.paint.Color.GREEN);
-            if (!ServiceController.isServiceRunning()) {
-                ServiceController.startBlockerDaemon();
-            }
-        } else {
-            startServiceButton.setDisable(false);
-            stopServiceButton.setDisable(true);
-            lockStatus.setText("Locking Disabled");
-            lockStatus.setTextFill(javafx.scene.paint.Color.RED);
-        }
-    }
-
-    @FXML
-    private void swapFLockStatus() {
-        logger.logInfo("Toggling lock status for selected folders.");
-        folderItems.stream().filter(LockedItem::isSelected).forEach(item -> {
-            item.setLocked(!item.isLocked());
-            item.setSelected(false);
-            logger.logInfo("Toggled lock status for folder: " + item.getName());
-        });
-        Config.saveConfig();
-        refreshTableData();
-    }
-
-    @FXML
-    private void swapPLockStatus() {
-        logger.logInfo("Toggling lock status for selected programs.");
-        programItems.stream().filter(LockedItem::isSelected).forEach(item -> {
-            item.setLocked(!item.isLocked());
-            item.setSelected(false);
-            logger.logInfo("Toggled lock status for program: " + item.getName());
-        });
-        Config.saveConfig();
-        refreshTableData();
-    }
+    // ===============================
+    // PASSWORD MANAGEMENT METHODS
+    // ===============================
 
     @FXML
     private void changePassword() {
         logger.logInfo("Attempting to change password.");
 
-        String currentPassword = currentPasswordField.getText();
-        String newPassword = newPasswordField.getText();
-        String confirmPassword = confirmPasswordField.getText();
-
-        // Clear previous status
-        passwordChangeStatus.setText("");
-        passwordChangeStatus.getStyleClass().removeAll("error-label", "success-label");
-
-        // Validate inputs
-        if (currentPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
-            passwordChangeStatus.setText("All fields are required.");
-            passwordChangeStatus.getStyleClass().add("error-label");
-            logger.logWarning("Password change failed: missing fields.");
-            return;
-        }
-
-        // Verify current password
-        String currentPasswordHash = Main.hashPassword(currentPassword);
-        if (!currentPasswordHash.equals(Config.PASSWORD_HASH)) {
-            passwordChangeStatus.setText("Current password is incorrect.");
-            passwordChangeStatus.getStyleClass().add("error-label");
-            logger.logWarning("Password change failed: incorrect current password.");
-            return;
-        }
-
-        // Verify new passwords match
-        if (!newPassword.equals(confirmPassword)) {
-            passwordChangeStatus.setText("New passwords do not match.");
-            passwordChangeStatus.getStyleClass().add("error-label");
-            logger.logWarning("Password change failed: passwords do not match.");
-            return;
-        }
-
-        // Check minimum password length
-        if (newPassword.length() < 4) {
-            passwordChangeStatus.setText("Password must be at least 4 characters long.");
-            passwordChangeStatus.getStyleClass().add("error-label");
-            logger.logWarning("Password change failed: password too short.");
+        PasswordChangeRequest request = getPasswordChangeRequest();
+        if (!validatePasswordChangeRequest(request)) {
             return;
         }
 
         try {
-            // Update password
-            String newPasswordHash = Main.hashPassword(newPassword);
-            Config.PASSWORD_HASH = newPasswordHash;
-            Main.config.getJsonConfig().remove("password");
-            Main.config.getJsonConfig().addProperty("password", newPasswordHash);
-            Config.saveConfig();
-
-            // Clear fields
-            currentPasswordField.clear();
-            newPasswordField.clear();
-            confirmPasswordField.clear();
-
-            // Show success message
-            passwordChangeStatus.setText("Password changed successfully!");
-            passwordChangeStatus.setTextFill(javafx.scene.paint.Color.GREEN);
+            updatePassword(request.newPassword);
+            clearPasswordFields();
+            showPasswordChangeSuccess();
             logger.logInfo("Password changed successfully.");
-
         } catch (Exception e) {
-            passwordChangeStatus.setText("Error changing password: " + e.getMessage());
-            passwordChangeStatus.getStyleClass().add("error-label");
+            showPasswordChangeError("Error changing password: " + e.getMessage());
             logger.logError("Error changing password: " + e.getMessage());
         }
     }
+
+    private PasswordChangeRequest getPasswordChangeRequest() {
+        return new PasswordChangeRequest(
+                currentPasswordField.getText(),
+                newPasswordField.getText(),
+                confirmPasswordField.getText()
+        );
+    }
+
+    private boolean validatePasswordChangeRequest(PasswordChangeRequest request) {
+        clearPasswordStatus();
+
+        if (request.hasEmptyFields()) {
+            showPasswordChangeError("All fields are required.");
+            logger.logWarning("Password change failed: missing fields.");
+            return false;
+        }
+
+        if (!request.isCurrentPasswordValid()) {
+            showPasswordChangeError("Current password is incorrect.");
+            logger.logWarning("Password change failed: incorrect current password.");
+            return false;
+        }
+
+        if (!request.doNewPasswordsMatch()) {
+            showPasswordChangeError("New passwords do not match.");
+            logger.logWarning("Password change failed: passwords do not match.");
+            return false;
+        }
+
+        if (!request.isNewPasswordLongEnough()) {
+            showPasswordChangeError("Password must be at least " + MIN_PASSWORD_LENGTH + " characters long.");
+            logger.logWarning("Password change failed: password too short.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void updatePassword(String newPassword) {
+        String newPasswordHash = EncryptionUtils.hashPassword(newPassword);
+        Config.passwordHash = newPasswordHash;
+        Main.config.getJsonConfig().remove("password");
+        Main.config.getJsonConfig().addProperty("password", newPasswordHash);
+        Config.saveConfig();
+    }
+
+    private void clearPasswordFields() {
+        currentPasswordField.clear();
+        newPasswordField.clear();
+        confirmPasswordField.clear();
+    }
+
+    private void clearPasswordStatus() {
+        passwordChangeStatus.setText("");
+        passwordChangeStatus.getStyleClass().removeAll("error-label", "success-label");
+    }
+
+    private void showPasswordChangeSuccess() {
+        passwordChangeStatus.setText("Password changed successfully!");
+        passwordChangeStatus.setTextFill(javafx.scene.paint.Color.GREEN);
+    }
+
+    private void showPasswordChangeError(String message) {
+        passwordChangeStatus.setText(message);
+        passwordChangeStatus.getStyleClass().add("error-label");
+    }
+
+    // ===============================
+    // EXTERNAL LINKS METHODS
+    // ===============================
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @FXML
     private void openAppDataFolder() {
         try {
-            // Get the AppData path for your applicatiom
-            File appDataDir = new File(Main.appDataPath);
-
-            // Create directory if it doesn't exist
+            File appDataDir = new File(Main.APP_DATA_PATH);
             if (!appDataDir.exists()) {
                 appDataDir.mkdirs();
             }
 
-            // Open the folder in Windows Explorer
-            if (Desktop.isDesktopSupported()) {
-                Desktop.getDesktop().open(appDataDir);
-            } else {
-                // Fallback method using ProcessBuilder
-                new ProcessBuilder("explorer.exe", Main.appDataPath).start();
-            }
+            openDirectory(appDataDir);
         } catch (IOException e) {
-            e.printStackTrace();
-            // Optionally show an error dialog to the user
-            System.err.println("Failed to open AppData folder: " + e.getMessage());
+            logger.logError("Failed to open AppData folder: " + e.getMessage());
         }
     }
 
-    // Method to open Discord invite link
     @FXML
     private void openDiscordInvite() {
-        try {
-            String discordUrl = "https://discord.gg/Pn5U4whfnd";
-
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                Desktop.getDesktop().browse(new URI(discordUrl));
-            } else {
-                // Fallback method
-                new ProcessBuilder("cmd", "/c", "start", discordUrl).start();
-            }
-        } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
-            System.err.println("Failed to open Discord link: " + e.getMessage());
-        }
+        openUrl("https://discord.gg/Pn5U4whfnd", "Discord");
     }
 
-    // Method to open GitHub repository
     @FXML
     private void openGitHubRepo() {
-        try {
-            String githubUrl = "https://github.com/ghosthacks96/ghostsecure";
+        openUrl("https://github.com/ghosthacks96/ghostsecure", "GitHub");
+    }
 
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                Desktop.getDesktop().browse(new URI(githubUrl));
-            } else {
-                // Fallback method
-                new ProcessBuilder("cmd", "/c", "start", githubUrl).start();
-            }
-        } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
-            System.err.println("Failed to open GitHub link: " + e.getMessage());
+    private void openDirectory(File directory) throws IOException {
+        if (Desktop.isDesktopSupported()) {
+            Desktop.getDesktop().open(directory);
+        } else {
+            new ProcessBuilder("explorer.exe", directory.getAbsolutePath()).start();
         }
     }
+
+    private void openUrl(String url, String serviceName) {
+        try {
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                Desktop.getDesktop().browse(new URI(url));
+            } else {
+                new ProcessBuilder("cmd", "/c", "start", url).start();
+            }
+        } catch (IOException | URISyntaxException e) {
+            logger.logError("Failed to open " + serviceName + " link: " + e.getMessage());
+        }
+    }
+
+    // ===============================
+    // IMPORT/EXPORT METHODS
+    // ===============================
 
     @FXML
     public void exportSettings(ActionEvent actionEvent) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Export Settings");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Backup File", "*.GSBACKUP"));
+        FileChooser fileChooser = createBackupFileChooser("Export Settings");
         File file = fileChooser.showSaveDialog(new Stage());
-        if (file != null) {
-            try {
-                if (file.createNewFile() || file.exists()) {
-                    // 1. Get decrypted config as JSON string
-                    String configJson = Config.gson.toJson(Config.config);
 
-                    // 2. Generate new salt
-                    byte[] newSalt = me.ghosthacks96.ghostsecure.utils.EncryptionUtils.generateSalt();
-
-                    // 3. Derive key from static password and random salt
-                    javax.crypto.SecretKey newKey = new javax.crypto.spec.SecretKeySpec(
-                        java.util.Arrays.copyOf(
-                            java.security.MessageDigest.getInstance("SHA-256").digest("ThisIsBuLLShit".getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-                            32
-                        ),
-                        "AES"
-                    );
-
-                    // 4. Encrypt config JSON with new key
-                    String encrypted = me.ghosthacks96.ghostsecure.utils.EncryptionUtils.encrypt(configJson, newKey);
-
-                    // 5. Append salt to encrypted data with separator
-                    String exportData = encrypted + "!!_!!" + java.util.Base64.getEncoder().encodeToString(newSalt);
-
-                    // 6. Write to file
-                    java.nio.file.Files.writeString(file.toPath(), exportData);
-
-                    logger.logInfo("Settings exported successfully to " + file.getAbsolutePath());
-                } else {
-                    logger.logError("Failed to create the export file: " + file.getAbsolutePath());
-                }
-            } catch (Exception e) {
-                logger.logError("Failed to export settings: " + e.getMessage());
-            }
-        } else {
+        if (file == null) {
             logger.logWarning("Export cancelled by user.");
+            return;
+        }
+
+        try {
+            performExport(file);
+            logger.logInfo("Settings exported successfully to " + file.getAbsolutePath());
+        } catch (Exception e) {
+            logger.logError("Failed to export settings: " + e.getMessage());
         }
     }
-    
+
     @FXML
     public void importSettings(ActionEvent actionEvent) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Import Settings");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Backup File", "*.GSBACKUP"));
+        FileChooser fileChooser = createBackupFileChooser("Import Settings");
         File file = fileChooser.showOpenDialog(new Stage());
-        if (file != null) {
-            try {
-                String fileContent = java.nio.file.Files.readString(file.toPath());
-                String[] parts = fileContent.split("!!_!!");
-                if (parts.length != 2) {
-                    logger.logError("Invalid backup file format.");
-                    return;
-                }
-                String encrypted = parts[0];
-                byte[] salt = java.util.Base64.getDecoder().decode(parts[1]);
 
-                // Derive key from static password and salt
-                javax.crypto.SecretKey importKey = new javax.crypto.spec.SecretKeySpec(
-                    java.util.Arrays.copyOf(
-                        java.security.MessageDigest.getInstance("SHA-256").digest("ThisIsBuLLShit".getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-                        32
-                    ),
-                    "AES"
-                );
-
-                // Decrypt config JSON
-                String decryptedJson = me.ghosthacks96.ghostsecure.utils.EncryptionUtils.decrypt(encrypted, importKey);
-                if (decryptedJson == null) {
-                    logger.logError("Failed to decrypt imported settings.");
-                    return;
-                }
-                JsonObject importedConfig = Config.gson.fromJson(decryptedJson, com.google.gson.JsonObject.class);
-
-                // Merge imported items, skipping duplicates
-                JsonArray importedPrograms = importedConfig.has("programs") ? importedConfig.getAsJsonArray("programs") : new JsonArray();
-                JsonArray importedFolders = importedConfig.has("folders") ? importedConfig.getAsJsonArray("folders") : new JsonArray();
-
-                JsonArray currentPrograms = Config.config.has("programs") ? Config.config.getAsJsonArray("programs") : new JsonArray();
-                JsonArray currentFolders = Config.config.has("folders") ? Config.config.getAsJsonArray("folders") : new JsonArray();
-
-                // Helper to check for duplicates
-                java.util.Set<String> programSet = new java.util.HashSet<>();
-                for (int i = 0; i < currentPrograms.size(); i++) programSet.add(currentPrograms.get(i).getAsString());
-                for (int i = 0; i < importedPrograms.size(); i++) {
-                    String entry = importedPrograms.get(i).getAsString();
-                    if (!programSet.contains(entry)) {
-                        currentPrograms.add(entry);
-                        programSet.add(entry);
-                    }
-                }
-
-                java.util.Set<String> folderSet = new java.util.HashSet<>();
-                for (int i = 0; i < currentFolders.size(); i++) folderSet.add(currentFolders.get(i).getAsString());
-                for (int i = 0; i < importedFolders.size(); i++) {
-                    String entry = importedFolders.get(i).getAsString();
-                    if (!folderSet.contains(entry)) {
-                        currentFolders.add(entry);
-                        folderSet.add(entry);
-                    }
-                }
-
-                Config.config.add("programs", currentPrograms);
-                Config.config.add("folders", currentFolders);
-                me.ghosthacks96.ghostsecure.utils.controllers.Config.saveConfig();
-                refreshTableData();
-                logger.logInfo("Settings imported successfully from " + file.getAbsolutePath());
-            } catch (Exception e) {
-                logger.logError("Failed to import settings: " + e.getMessage());
-            }
-        } else {
+        if (file == null) {
             logger.logWarning("Import cancelled by user.");
+            return;
+        }
+
+        try {
+            performImport(file);
+            logger.logInfo("Settings imported successfully from " + file.getAbsolutePath());
+        } catch (Exception e) {
+            logger.logError("Failed to import settings: " + e.getMessage());
+        }
+    }
+
+    private FileChooser createBackupFileChooser(String title) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(title);
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Backup File", BACKUP_EXTENSION)
+        );
+        return fileChooser;
+    }
+
+    private void performExport(File file) throws Exception {
+        if (!file.createNewFile() && !file.exists()) {
+            throw new IOException("Failed to create the export file: " + file.getAbsolutePath());
+        }
+
+        String configJson = Config.gson.toJson(Config.config);
+        byte[] newSalt = EncryptionUtils.generateSalt();
+
+        javax.crypto.SecretKey newKey = createBackupKey();
+        String encrypted = EncryptionUtils.encrypt(configJson, newKey);
+        String exportData = encrypted + EXPORT_SEPARATOR + Base64.getEncoder().encodeToString(newSalt);
+
+        Files.writeString(file.toPath(), exportData);
+    }
+
+    private void performImport(File file) throws Exception {
+        String fileContent = Files.readString(file.toPath());
+        String[] parts = fileContent.split(EXPORT_SEPARATOR);
+
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid backup file format.");
+        }
+
+        String encrypted = parts[0];
+        byte[] salt = Base64.getDecoder().decode(parts[1]);
+
+        javax.crypto.SecretKey importKey = createBackupKey();
+        String decryptedJson = EncryptionUtils.decrypt(encrypted, importKey);
+
+        if (decryptedJson == null) {
+            throw new IllegalArgumentException("Failed to decrypt imported settings.");
+        }
+
+        JsonObject importedConfig = Config.gson.fromJson(decryptedJson, JsonObject.class);
+        mergeImportedConfig(importedConfig);
+
+        Config.saveConfig();
+        refreshTableData();
+    }
+
+    private javax.crypto.SecretKey createBackupKey() throws Exception {
+        byte[] keyBytes = java.security.MessageDigest.getInstance("SHA-256")
+                .digest(STATIC_BACKUP_PASSWORD.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return new javax.crypto.spec.SecretKeySpec(Arrays.copyOf(keyBytes, 32), "AES");
+    }
+
+    private void mergeImportedConfig(JsonObject importedConfig) {
+        JsonArray importedPrograms = getJsonArrayOrEmpty(importedConfig, "programs");
+        JsonArray importedFolders = getJsonArrayOrEmpty(importedConfig, "folders");
+
+        JsonArray currentPrograms = getJsonArrayOrEmpty(Config.config, "programs");
+        JsonArray currentFolders = getJsonArrayOrEmpty(Config.config, "folders");
+
+        mergeArrays(currentPrograms, importedPrograms);
+        mergeArrays(currentFolders, importedFolders);
+
+        Config.config.add("programs", currentPrograms);
+        Config.config.add("folders", currentFolders);
+    }
+
+    private JsonArray getJsonArrayOrEmpty(JsonObject config, String key) {
+        return config.has(key) ? config.getAsJsonArray(key) : new JsonArray();
+    }
+
+    private void mergeArrays(JsonArray current, JsonArray imported) {
+        Set<String> currentSet = new HashSet<>();
+
+        for (int i = 0; i < current.size(); i++) {
+            currentSet.add(current.get(i).getAsString());
+        }
+
+        for (int i = 0; i < imported.size(); i++) {
+            String entry = imported.get(i).getAsString();
+            if (!currentSet.contains(entry)) {
+                current.add(entry);
+                currentSet.add(entry);
+            }
+        }
+    }
+
+    // ===============================
+    // UTILITY METHODS
+    // ===============================
+
+    private List<LockedItem> getSelectedItems(ObservableList<LockedItem> items) {
+        return items.stream()
+                .filter(LockedItem::isSelected)
+                .collect(Collectors.toList());
+    }
+
+    private void removeItemsAndSave(List<LockedItem> items, String itemType) {
+        Main.lockedItems.removeAll(items);
+        Config.saveConfig();
+        refreshTableData();
+
+        items.forEach(item ->
+                logger.logInfo("Removed " + itemType + ": " + item.getName())
+        );
+    }
+
+    private void toggleLockStatusForSelectedItems(ObservableList<LockedItem> items, String itemType) {
+        items.stream()
+                .filter(LockedItem::isSelected)
+                .forEach(item -> {
+                    item.setLocked(!item.isLocked());
+                    item.setSelected(false);
+                    logger.logInfo("Toggled lock status for " + itemType + ": " + item.getName());
+                });
+
+        Config.saveConfig();
+        refreshTableData();
+    }
+
+    // ===============================
+    // INNER CLASSES
+    // ===============================
+
+    private static class PasswordChangeRequest {
+        private final String currentPassword;
+        private final String newPassword;
+        private final String confirmPassword;
+
+        public PasswordChangeRequest(String currentPassword, String newPassword, String confirmPassword) {
+            this.currentPassword = currentPassword;
+            this.newPassword = newPassword;
+            this.confirmPassword = confirmPassword;
+        }
+
+        public boolean hasEmptyFields() {
+            return currentPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty();
+        }
+
+        public boolean isCurrentPasswordValid() {
+            String currentPasswordHash = EncryptionUtils.hashPassword(currentPassword);
+            assert currentPasswordHash != null;
+            return currentPasswordHash.equals(Config.passwordHash);
+        }
+
+        public boolean doNewPasswordsMatch() {
+            return newPassword.equals(confirmPassword);
+        }
+
+        public boolean isNewPasswordLongEnough() {
+            return newPassword.length() >= MIN_PASSWORD_LENGTH;
         }
     }
 }
-

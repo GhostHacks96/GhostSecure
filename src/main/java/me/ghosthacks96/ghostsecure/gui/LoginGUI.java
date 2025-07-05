@@ -7,8 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
-import me.ghosthacks96.ghostsecure.Main;
-import me.ghosthacks96.ghostsecure.utils.controllers.Config;
+import me.ghosthacks96.ghostsecure.utils.EncryptionUtils;
 
 /**
  * Controller for the login screen
@@ -40,7 +39,7 @@ public class LoginGUI {
     @FXML
     protected void onSubmitButtonClick() {
         String enteredPassword = passwordField.getText();
-        enteredPasswordHash = Main.hashPassword(enteredPassword);
+        enteredPasswordHash = EncryptionUtils.hashPassword(enteredPassword);
         closeWindow();
     }
 

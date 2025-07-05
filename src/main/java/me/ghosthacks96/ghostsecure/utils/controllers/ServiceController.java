@@ -17,58 +17,267 @@ import java.nio.file.attribute.AclFileAttributeView;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 public class ServiceController {
 
-    static boolean shutDown = false;
+    // Use AtomicBoolean for thread-safe shutdown flag
+    private static final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
+    private static final AtomicBoolean isRunning = new AtomicBoolean(false);
 
     private static ScheduledExecutorService scheduler;
+    private static ScheduledFuture<?> blockerTask;
 
-    // Start a daemon scheduler to monitor and kill blocked processes
-    public static void startBlockerDaemon() {
+    /**
+     * Start the blocker daemon service
+     * @return true if started successfully, false otherwise
+     */
+    public static synchronized boolean startBlockerDaemon() {
         Main.logger.logDebug("startBlockerDaemon() called");
+
+        // Check if already running
+        if (isRunning.get()) {
+            Main.logger.logInfo("Blocker daemon is already running.");
+            return true;
+        }
+
         Main.logger.logInfo("Attempting to start the blocker daemon.");
         try {
-            // Initialize the scheduler with two threads, one for each task
+            // Reset shutdown flag
+            isShuttingDown.set(false);
+
+            // Initialize the scheduler with daemon threads
             scheduler = Executors.newScheduledThreadPool(2, runnable -> {
-                Thread thread = new Thread(runnable);
-                thread.setDaemon(true); // Mark threads as daemon
+                Thread thread = new Thread(runnable, "ServiceController-Thread");
+                thread.setDaemon(true);
                 return thread;
             });
+
             Main.logger.logDebug("Scheduler initialized");
-            // Schedule the config loading task
-            scheduler.scheduleAtFixedRate(() -> {
+
+            // Schedule the blocking task
+            blockerTask = scheduler.scheduleAtFixedRate(() -> {
                 try {
+                    if (isShuttingDown.get()) {
+                        Main.logger.logDebug("Shutdown requested, stopping blocker daemon tick");
+                        return;
+                    }
+
                     Main.logger.logDebug("Blocker daemon tick: checking programs and folders");
                     checkPrograms();
                     checkFolders();
                 } catch (Exception e) {
-                    Main.logger.logError("Exception in blocker daemon tick: " + e.getMessage(),e);
+                    Main.logger.logError("Exception in blocker daemon tick: " + e.getMessage(), e);
                 }
-            }, 0, 1, TimeUnit.SECONDS); // Run immediately, then every 1 second
+            }, 0, 1, TimeUnit.SECONDS);
+
+            isRunning.set(true);
             Main.logger.logInfo("Blocker daemon started successfully.");
+            return true;
+
         } catch (Exception e) {
-            Main.logger.logError("Failed to start the blocker daemon: " + e.getMessage(),e);
+            Main.logger.logError("Failed to start the blocker daemon: " + e.getMessage(), e);
+            isRunning.set(false);
+            return false;
         }
     }
 
-    // Stop daemon scheduler
-    public static void stopBlockerDaemon() {
+    /**
+     * Stop the blocker daemon service
+     * @return true if stopped successfully, false otherwise
+     */
+    public static synchronized boolean stopBlockerDaemon() {
         Main.logger.logDebug("stopBlockerDaemon() called");
-        if (scheduler != null && !scheduler.isShutdown()) {
+
+        if (!isRunning.get()) {
+            Main.logger.logInfo("Blocker daemon is not running.");
+            return true;
+        }
+
+        try {
             Main.logger.logInfo("Shutting down the blocker daemon.");
-            scheduler.shutdown();
-            try {
-                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                    Main.logger.logDebug("Scheduler did not terminate in time, forcing shutdown");
-                    scheduler.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                Main.logger.logDebug("InterruptedException during scheduler shutdown: " + e.getMessage(),e);
-                scheduler.shutdownNow();
+
+            // Set shutdown flag to stop the daemon loop
+            isShuttingDown.set(true);
+
+            // Cancel the blocking task
+            if (blockerTask != null && !blockerTask.isCancelled()) {
+                blockerTask.cancel(true);
             }
+
+            // Unlock all folders before shutting down
+            unlockAllFolders();
+
+            // Shutdown the scheduler
+            if (scheduler != null && !scheduler.isShutdown()) {
+                scheduler.shutdown();
+                try {
+                    if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                        Main.logger.logDebug("Scheduler did not terminate in time, forcing shutdown");
+                        scheduler.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    Main.logger.logDebug("InterruptedException during scheduler shutdown: " + e.getMessage(), e);
+                    scheduler.shutdownNow();
+                    Thread.currentThread().interrupt(); // Restore interrupted status
+                }
+            }
+
+            isRunning.set(false);
+            Main.logger.logInfo("Blocker daemon stopped successfully.");
+            return true;
+
+        } catch (Exception e) {
+            Main.logger.logError("Error stopping blocker daemon: " + e.getMessage(), e);
+            isRunning.set(false);
+            return false;
+        }
+    }
+
+    /**
+     * Restart the blocker daemon service
+     * @return true if restarted successfully, false otherwise
+     */
+    public static synchronized boolean restartBlockerDaemon() {
+        Main.logger.logInfo("Restarting blocker daemon...");
+        boolean stopped = stopBlockerDaemon();
+        if (!stopped) {
+            Main.logger.logError("Failed to stop blocker daemon, cannot restart");
+            return false;
+        }
+
+        // Wait a moment to ensure cleanup is complete
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Main.logger.logDebug("Interrupted during restart delay");
+        }
+
+        return startBlockerDaemon();
+    }
+
+    /**
+     * Check if the service is currently running
+     * @return true if running, false otherwise
+     */
+    public static boolean isServiceRunning() {
+        Main.logger.logDebug("isServiceRunning() called");
+        try {
+            boolean running = isRunning.get() &&
+                    scheduler != null &&
+                    !scheduler.isShutdown() &&
+                    !scheduler.isTerminated() &&
+                    Main.config.getJsonConfig().get("mode").getAsString().equals("lock");
+
+            if (running) {
+                Main.logger.logInfo("Service is active and running in locking mode.");
+            } else {
+                Main.logger.logInfo("Service is not running.");
+            }
+            return running;
+        } catch (Exception e) {
+            Main.logger.logWarning("Error while checking service status: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get the current service status as a string
+     * @return Status string
+     */
+    public static String getServiceStatus() {
+        if (isShuttingDown.get()) {
+            return "Shutting down...";
+        } else if (isRunning.get()) {
+            return "Running";
+        } else {
+            return "Stopped";
+        }
+    }
+
+    /**
+     * Unlock all folders (used during shutdown)
+     */
+    private static void unlockAllFolders() {
+        Main.logger.logDebug("unlockAllFolders() called");
+        try {
+            for (LockedItem li : Main.lockedItems) {
+                if (li.getName().contains(".exe")) continue;
+
+                Path folderPath = Paths.get(li.getPath());
+                if (!Files.exists(folderPath)) {
+                    Main.logger.logWarning("Folder does not exist: " + li.getPath());
+                    continue;
+                }
+
+                Main.logger.logDebug("Unlocking folder: " + li.getPath());
+                unlockPathRecursively(folderPath);
+            }
+        } catch (Exception e) {
+            Main.logger.logError("Failed to unlock folders: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Recursively unlock a path and all its contents
+     */
+    private static void unlockPathRecursively(Path rootPath) {
+        Main.logger.logDebug("unlockPathRecursively() called for: " + rootPath);
+        try {
+            if (Files.isDirectory(rootPath)) {
+                try (Stream<Path> paths = Files.walk(rootPath)) {
+                    List<Path> allPaths = paths.filter(path -> !path.equals(rootPath))
+                            .toList();
+
+                    // Unlock from shallowest to deepest
+                    allPaths.stream()
+                            .sorted((p1, p2) -> Integer.compare(p1.getNameCount(), p2.getNameCount()))
+                            .forEach(path -> {
+                                try {
+                                    unlockPath(path);
+                                } catch (Exception e) {
+                                    Main.logger.logError("Failed to unlock path: " + path + "; Error: " + e.getMessage(), e);
+                                }
+                            });
+                } catch (IOException e) {
+                    Main.logger.logError("Failed to walk directory tree for: " + rootPath + "; Error: " + e.getMessage(), e);
+                }
+            }
+            // Unlock the root path
+            unlockPath(rootPath);
+        } catch (Exception e) {
+            Main.logger.logError("Failed to unlock path recursively: " + rootPath + "; Error: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Unlock a specific path
+     */
+    private static void unlockPath(Path path) {
+        Main.logger.logDebug("unlockPath() called for: " + path);
+        try {
+            AclFileAttributeView aclView = Files.getFileAttributeView(path, AclFileAttributeView.class);
+            if (aclView == null) {
+                Main.logger.logError("ACL view not supported on this file system for: " + path);
+                return;
+            }
+
+            AclEntry grantAllAccess = AclEntry.newBuilder()
+                    .setType(AclEntryType.ALLOW)
+                    .setPrincipal(FileSystems.getDefault()
+                            .getUserPrincipalLookupService()
+                            .lookupPrincipalByName("Everyone"))
+                    .setPermissions(AclEntryPermission.values())
+                    .build();
+
+            aclView.setAcl(List.of(grantAllAccess));
+            Main.logger.logInfo("Unlocked: " + path);
+        } catch (Exception e) {
+            Main.logger.logError("Failed to unlock path: " + path + "; Error: " + e.getMessage(), e);
         }
     }
 
@@ -76,64 +285,75 @@ public class ServiceController {
         Main.logger.logDebug("checkFolders() called");
         try {
             for (LockedItem li : Main.lockedItems) {
+                if (isShuttingDown.get()) {
+                    Main.logger.logDebug("Shutdown requested, stopping folder check");
+                    return;
+                }
+
                 Path folderPath = Paths.get(li.getPath());
                 Main.logger.logDebug("Checking folder: " + li.getPath());
-                // Check if the folder exists
+
                 if (!Files.exists(folderPath)) {
                     Main.logger.logWarning("Folder does not exist: " + li.getPath());
                     continue;
                 }
+
                 if (li.getName().contains(".exe")) continue;
+
                 // Apply permissions recursively to the folder and all its contents
                 applyPermissionsRecursively(folderPath, li);
             }
         } catch (Exception e) {
-            Main.logger.logError("Failed to check locked folders: " + e.getMessage(),e);
+            Main.logger.logError("Failed to check locked folders: " + e.getMessage(), e);
         }
     }
 
     private static void applyPermissionsRecursively(Path rootPath, LockedItem li) {
         Main.logger.logDebug("applyPermissionsRecursively() called for: " + rootPath);
         try {
-            // If it's a directory, we need to process contents first (before locking the root)
             if (Files.isDirectory(rootPath)) {
                 try (Stream<Path> paths = Files.walk(rootPath)) {
-                    // Collect all paths and sort them by depth (deepest first for locking, shallowest first for unlocking)
                     List<Path> allPaths = paths.filter(path -> !path.equals(rootPath))
-                            .collect(java.util.stream.Collectors.toList());
+                            .toList();
+
                     Main.logger.logDebug("Found " + allPaths.size() + " paths under " + rootPath);
+
                     if (li.isLocked() && Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
-                        // When locking: Start from deepest files/folders first, then work up to root
+                        // When locking: Start from deepest files/folders first
                         allPaths.stream()
                                 .sorted((p1, p2) -> Integer.compare(p2.getNameCount(), p1.getNameCount()))
                                 .forEach(path -> {
+                                    if (isShuttingDown.get()) return;
                                     try {
                                         applyPermissionsToPath(path, li);
                                     } catch (Exception e) {
-                                        Main.logger.logError("Failed to apply permissions to: " + path + "; Error: " + e.getMessage(),e);
+                                        Main.logger.logError("Failed to apply permissions to: " + path + "; Error: " + e.getMessage(), e);
                                     }
                                 });
                     } else {
-                        // When unlocking: Start from shallowest (closest to root) first
+                        // When unlocking: Start from shallowest first
                         allPaths.stream()
                                 .sorted((p1, p2) -> Integer.compare(p1.getNameCount(), p2.getNameCount()))
                                 .forEach(path -> {
+                                    if (isShuttingDown.get()) return;
                                     try {
                                         applyPermissionsToPath(path, li);
                                     } catch (Exception e) {
-                                        Main.logger.logError("Failed to apply permissions to: " + path + "; Error: " + e.getMessage(),e);
+                                        Main.logger.logError("Failed to apply permissions to: " + path + "; Error: " + e.getMessage(), e);
                                     }
                                 });
                     }
                 } catch (IOException e) {
-                    Main.logger.logError("Failed to walk directory tree for: " + rootPath + "; Error: " + e.getMessage(),e);
+                    Main.logger.logError("Failed to walk directory tree for: " + rootPath + "; Error: " + e.getMessage(), e);
                 }
             }
-            // Apply permissions to the root folder/file last (for locking) or first (for unlocking)
-            applyPermissionsToPath(rootPath, li);
-        } catch (Exception e) {
-            Main.logger.logError("Failed to apply permissions recursively to: " + rootPath + "; Error: " + e.getMessage(),e);
 
+            // Apply permissions to the root folder/file
+            if (!isShuttingDown.get()) {
+                applyPermissionsToPath(rootPath, li);
+            }
+        } catch (Exception e) {
+            Main.logger.logError("Failed to apply permissions recursively to: " + rootPath + "; Error: " + e.getMessage(), e);
         }
     }
 
@@ -145,34 +365,34 @@ public class ServiceController {
                 Main.logger.logError("ACL view not supported on this file system for: " + path);
                 return;
             }
-            if (li.isLocked() && Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
+
+            if (li.isLocked() && Main.config.getJsonConfig().get("mode").getAsString().equals("lock") && !isShuttingDown.get()) {
                 // Deny all access to the path
                 AclEntry denyAllAccess = AclEntry.newBuilder()
                         .setType(AclEntryType.DENY)
                         .setPrincipal(FileSystems.getDefault()
                                 .getUserPrincipalLookupService()
                                 .lookupPrincipalByName("Everyone"))
-                        .setPermissions(AclEntryPermission.values()) // Deny all available permissions
+                        .setPermissions(AclEntryPermission.values())
                         .build();
                 aclView.setAcl(List.of(denyAllAccess));
+
                 if (Files.isDirectory(path)) {
                     Main.logger.logInfo("Applied DENY permissions to directory: " + path);
                 } else {
                     Main.logger.logInfo("Applied DENY permissions to file: " + path);
                 }
-            } else if (!li.isLocked() || Main.config.getJsonConfig().get("mode").getAsString().equals("unlock") || shutDown) {
-                if (shutDown) {
-                    Main.logger.logDebug("Shutting down service. unlocking: " + path);
-                }
+            } else {
                 // Restore access by granting all permissions
                 AclEntry grantAllAccess = AclEntry.newBuilder()
                         .setType(AclEntryType.ALLOW)
                         .setPrincipal(FileSystems.getDefault()
                                 .getUserPrincipalLookupService()
                                 .lookupPrincipalByName("Everyone"))
-                        .setPermissions(AclEntryPermission.values()) // Allow all available permissions
+                        .setPermissions(AclEntryPermission.values())
                         .build();
                 aclView.setAcl(List.of(grantAllAccess));
+
                 if (Files.isDirectory(path)) {
                     Main.logger.logInfo("Applied ALLOW permissions to directory: " + path);
                 } else {
@@ -180,18 +400,28 @@ public class ServiceController {
                 }
             }
         } catch (Exception aclError) {
-            Main.logger.logError("Failed to modify permissions for: " + path + "; Error: " + aclError.getMessage(),aclError);
+            Main.logger.logError("Failed to modify permissions for: " + path + "; Error: " + aclError.getMessage(), aclError);
         }
     }
 
     private static void checkPrograms() {
         Main.logger.logDebug("checkPrograms() called");
         try {
-            //programs first
+            if (isShuttingDown.get()) {
+                Main.logger.logDebug("Shutdown requested, stopping program check");
+                return;
+            }
+
             Process process = new ProcessBuilder("tasklist").start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
+
             while ((line = reader.readLine()) != null) {
+                if (isShuttingDown.get()) {
+                    Main.logger.logDebug("Shutdown requested, stopping program check");
+                    break;
+                }
+
                 for (LockedItem li : Main.lockedItems) {
                     if (line.contains(li.getName()) && li.isLocked()
                             && Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
@@ -205,11 +435,10 @@ public class ServiceController {
                 }
             }
         } catch (Exception e) {
-            Main.logger.logError("Failed to check locked programs: " + e.getMessage(),e);
+            Main.logger.logError("Failed to check locked programs: " + e.getMessage(), e);
         }
     }
 
-    // Kill a specific process by name
     private static void killProcess(String processName) {
         Main.logger.logDebug("killProcess() called for: " + processName);
         Main.logger.logInfo("Attempting to kill process: " + processName);
@@ -219,40 +448,17 @@ public class ServiceController {
             process.waitFor();
             Main.logger.logInfo("Successfully killed process: " + processName);
         } catch (IOException | InterruptedException e) {
-            Main.logger.logError("Failed to kill process " + processName + ": " + e.getMessage(),e);
-        }
-    }
-
-    public static boolean isServiceRunning() {
-        Main.logger.logDebug("isServiceRunning() called");
-        try {
-            if (scheduler != null && !scheduler.isShutdown() && !scheduler.isTerminated()
-                    && Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
-                Main.logger.logInfo("Service is active and running in locking mode.");
-                return true;
+            Main.logger.logError("Failed to kill process " + processName + ": " + e.getMessage(), e);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
             }
-        } catch (Exception e) {
-            Main.logger.logWarning("Error while checking service status: " + e.getMessage());
-            
         }
-        Main.logger.logInfo("Service is not running.");
-        return false;
     }
 
-
+    // Legacy method for backward compatibility - now just calls stopBlockerDaemon
+    @Deprecated
     public static boolean killDaemon() {
-        Main.logger.logDebug("killDaemon() called");
-        try {
-            Main.logger.logDebug("Attempting to stop the blocker daemon. Unlocking Folders");
-            shutDown = true;
-            checkFolders();
-            while(shutDown){}
-            stopBlockerDaemon();
-            return false;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
+        Main.logger.logDebug("killDaemon() called (deprecated - use stopBlockerDaemon instead)");
+        return stopBlockerDaemon();
     }
 }
-

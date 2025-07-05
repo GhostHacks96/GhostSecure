@@ -9,9 +9,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.*;
 import java.util.zip.*;
 
+@SuppressWarnings("CallToPrintStackTrace")
 public class Logging {
 
-    private static final String LOG_DIR = Main.appDataPath + "logs/";
+    private static final String LOG_DIR = Main.APP_DATA_PATH + "logs/";
     private static final String CURRENT_LOG_FILE = LOG_DIR + "latest.log";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yy");
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -38,24 +39,13 @@ public class Logging {
         log(LogLevel.INFO, message, null);
     }
 
-    public void logInfo(String message, Object... args) {
-        logInfo(String.format(message, args));
-    }
-
     public void logWarning(String message) {
         log(LogLevel.WARNING, message, null);
     }
 
-    public void logWarning(String message, Object... args) {
-        logWarning(String.format(message, args));
-    }
 
     public void logError(String message) {
         log(LogLevel.ERROR, message, null);
-    }
-
-    public void logError(String message, Object... args) {
-        logError(String.format(message, args));
     }
 
     public void logError(String message, Throwable throwable) {
@@ -78,6 +68,8 @@ public class Logging {
         }
     }
 
+    // Add this to your log() method in Logging.java, replace the existing log method:
+
     private void log(LogLevel level, String message, Throwable throwable) {
         if (isShuttingDown) {
             return;
@@ -95,16 +87,34 @@ public class Logging {
         }
 
         // Show in debug console if enabled
-        if (Main.DEBUG_MODE && debugConsole == null) {
-            try {
-                debugConsole = DebugConsole.getInstance();
-                debugConsole.showConsole();
-            } catch (Exception e) {
-                // Fallback if debug console fails
-                System.err.println("Failed to initialize debug console: " + e.getMessage());
+        if (Main.DEBUG_MODE) {
+            if (debugConsole == null) {
+                try {
+                    javafx.application.Platform.runLater(() -> {
+                        try {
+                            debugConsole = DebugConsole.getInstance();
+                            debugConsole.showConsole();
+                        } catch (Exception e) {
+                            System.err.println("Failed to initialize debug console: " + e.getMessage());
+                        }
+                    });
+                } catch (Exception e) {
+                    // Fallback if Platform.runLater fails
+                    System.err.println("Failed to schedule debug console initialization: " + e.getMessage());
+                }
+            }
+
+            // Send message to debug console
+            if (debugConsole != null) {
+                String messageForConsole = message;
+                if (throwable != null) {
+                    messageForConsole += "\n" + formatStackTrace(throwable);
+                }
+                debugConsole.addLogMessage(level.name(), messageForConsole, timestamp);
             }
         }
 
+        // Print to system console (this will still go to terminal/IDE console)
         System.out.print(consoleLogEntry);
 
         // Submit to file writing thread
@@ -407,3 +417,4 @@ public class Logging {
         }
     }
 }
+

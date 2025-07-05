@@ -4,10 +4,12 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import me.ghosthacks96.ghostsecure.Main;
 
@@ -17,11 +19,24 @@ import java.io.PrintStream;
 
 public class DebugConsole {
     private static DebugConsole instance;
-    private TextArea consoleArea;
+    private TextFlow consoleFlow;
+    private ScrollPane scrollPane;
     private Stage consoleStage;
+    private VBox consoleContainer;
 
     private DebugConsole() {
         setupConsole();
+        Runtime.getRuntime().addShutdownHook(new Thread(this::killConsole, "DebugConsoleShutdownHook"));
+    }
+
+    public void killConsole() {
+        if (consoleStage != null) {
+            Platform.runLater(() -> {
+                consoleStage.hide();
+                consoleStage.close();
+            });
+        }
+        System.setOut(System.out); // Restore original System.out
     }
 
     public static DebugConsole getInstance() {
@@ -42,25 +57,39 @@ public class DebugConsole {
                     -fx-padding: 15 20 10 20;
                 """);
 
-        // Create console area with dark theme styling and emoji-supporting font
-        consoleArea = new TextArea();
-        consoleArea.setEditable(false);
-        consoleArea.setPrefRowCount(25);
-        consoleArea.setPrefColumnCount(100);
-        consoleArea.setWrapText(true);
-
-        // Updated styling with fallback fonts that support emojis
-        consoleArea.setStyle("""
+        // Create console flow for rich text support
+        consoleFlow = new TextFlow();
+        consoleFlow.setStyle("""
                     -fx-background-color: #0a0a0a;
-                    -fx-text-fill: #ffffff;
-                    -fx-font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji', 'Consolas', 'Monaco', 'Courier New', monospace;
-                    -fx-font-size: 12px;
+                    -fx-padding: 10;
+                """);
+
+        // Create container for the console flow
+        consoleContainer = new VBox();
+        consoleContainer.getChildren().add(consoleFlow);
+        consoleContainer.setStyle("""
+                    -fx-background-color: #0a0a0a;
                     -fx-border-color: #00d4ff33;
                     -fx-border-width: 1;
                     -fx-border-radius: 8;
                     -fx-background-radius: 8;
-                    -fx-control-inner-background: #1e1e1e;
-                    -fx-padding: 10;
+                """);
+
+        // Create scroll pane
+        scrollPane = new ScrollPane(consoleContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setPrefViewportHeight(400);
+        scrollPane.setPrefViewportWidth(780);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle("""
+                    -fx-background: #0a0a0a;
+                    -fx-background-color: #0a0a0a;
+                    -fx-border-color: #00d4ff33;
+                    -fx-border-width: 1;
+                    -fx-border-radius: 8;
+                    -fx-background-radius: 8;
                 """);
 
         // Create control buttons
@@ -133,55 +162,79 @@ public class DebugConsole {
                 """);
 
         VBox root = new VBox();
-        root.getChildren().addAll(headerBox, consoleArea);
+        root.getChildren().addAll(headerBox, scrollPane);
         root.setStyle("""
                     -fx-background-color: linear-gradient(to bottom right, #0a0a0a 0%, #1a1a1a 100%);
-                    -fx-spacing: 0;
+                    -fx-spacing: 5;
                 """);
-        VBox.setVgrow(consoleArea, javafx.scene.layout.Priority.ALWAYS);
+        VBox.setVgrow(scrollPane, javafx.scene.layout.Priority.ALWAYS);
 
         Scene scene = new Scene(root, 800, 500);
 
         consoleStage = new Stage();
         consoleStage.setTitle("GhostSecure - Debug Console");
         consoleStage.setScene(scene);
+    }
 
-        // Redirect System.out to console with colored output and emoji filtering
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(new OutputStream() {
-            private StringBuilder buffer = new StringBuilder();
+    private void addColoredMessage(String level, String message, String timestamp) {
+        // Create timestamp text
+        Text timestampText = new Text("[" + timestamp + "] ");
+        timestampText.setStyle("""
+                -fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                -fx-font-size: 12px;
+                -fx-fill: #888888;
+                """);
 
-            @Override
-            public void write(int b) throws IOException {
-                if (Main.DEBUG_MODE) {
-                    if (b == '\n') {
-                        String line = buffer.toString();
-                        String timestamp = java.time.LocalTime.now().format(
-                                java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")
-                        );
-                        // Convert console format back to emoji format for debug console
-                        String emojiLine = convertConsoleToEmojiFormat(line);
-                        String formattedLine = String.format("[%s] %s\n", timestamp, emojiLine);
+        // Determine message type and create styled text
+        Text messageText = new Text();
+        messageText.setStyle("""
+                -fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                -fx-font-size: 12px;
+                """);
 
-                        Platform.runLater(() -> {
-                            consoleArea.appendText(formattedLine);
-                            consoleArea.setScrollTop(Double.MAX_VALUE);
-                        });
-                        buffer.setLength(0);
-                    } else {
-                        buffer.append((char) b);
-                    }
-                }
-                originalOut.write(b); // Also write to original console
-            }
-        }));
+        String cleanMessage = message.trim();
+
+        if (level.contains("DEBUG")) {
+            messageText.setText("🔍 [DEBUG] " + cleanMessage + "\n");
+            messageText.setStyle(messageText.getStyle() + "-fx-fill: #00d4ff;"); // Cyan for debug
+        } else if (level.contains("INFO")) {
+            messageText.setText("ℹ [INFO] " + cleanMessage + "\n");
+            messageText.setStyle(messageText.getStyle() + "-fx-fill: #00ff88;"); // Green for info
+        } else if (level.contains("WARNING")) {
+            messageText.setText("⚠ [WARNING] " + cleanMessage + "\n");
+            messageText.setStyle(messageText.getStyle() + "-fx-fill: #ffaa00;"); // Orange for warning
+        } else if (level.contains("ERROR")) {
+            messageText.setText("❌ [ERROR] " + cleanMessage + "\n");
+            messageText.setStyle(messageText.getStyle() + "-fx-fill: #ff4444;"); // Red for error
+        } else {
+            // Default message
+            messageText.setText(cleanMessage + "\n");
+            messageText.setStyle(messageText.getStyle() + "-fx-fill: #ffffff;"); // White for default
+        }
+
+        // Add to console flow
+        consoleFlow.getChildren().addAll(timestampText, messageText);
+
+        // Limit number of messages to prevent memory issues
+        if (consoleFlow.getChildren().size() > 2000) { // 1000 messages (2 Text nodes each)
+            consoleFlow.getChildren().remove(0, 200); // Remove oldest 100 messages
+        }
+    }
+
+    private void scrollToBottom() {
+        Platform.runLater(() -> {
+            scrollPane.setVvalue(1.0);
+        });
     }
 
     public void showConsole() {
-        if (!consoleStage.isShowing()) {
-            consoleStage.show();
-        }
-        consoleStage.toFront();
+        Platform.runLater(() -> {
+            DebugConsole instance = getInstance();
+            if (instance.consoleStage != null) {
+                instance.consoleStage.show();
+                instance.consoleStage.toFront();
+            }
+        });
     }
 
     public void hideConsole() {
@@ -190,16 +243,18 @@ public class DebugConsole {
     }
 
     public void clearConsole() {
-        Platform.runLater(() -> consoleArea.clear());
+        Platform.runLater(() -> consoleFlow.getChildren().clear());
     }
 
-    // Helper method to convert console format back to emoji format for debug console
-    private String convertConsoleToEmojiFormat(String consoleLine) {
-        return consoleLine
-                .replace("[DEBUG]", "🔍 [DEBUG]")
-                .replace("[INFO]", "ℹ️ [INFO]")
-                .replace("[WARNING]", "⚠️ [WARNING]")
-                .replace("[ERROR]", "❌ [ERROR]");
-    }
+    // Method to be called by the Logging class to add messages to the console
+    public void addLogMessage(String level, String message, String timestamp) {
+        if (!Main.DEBUG_MODE) {
+            return;
+        }
 
+        Platform.runLater(() -> {
+            addColoredMessage(level, message, timestamp);
+            scrollToBottom();
+        });
+    }
 }

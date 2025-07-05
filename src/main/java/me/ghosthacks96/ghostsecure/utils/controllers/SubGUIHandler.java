@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -14,160 +15,345 @@ import org.kordamp.bootstrapfx.BootstrapFX;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-import static me.ghosthacks96.ghostsecure.utils.controllers.Config.PASSWORD_HASH;
+import static me.ghosthacks96.ghostsecure.utils.controllers.Config.passwordHash;
 
+/**
+ * Handles creation and management of sub-GUI windows and dialogs
+ */
 public class SubGUIHandler {
+
+    // Resource paths
+    private static final String DARK_THEME_CSS = "/me/ghosthacks96/ghostsecure/dark-theme.css";
+    private static final String APP_ICON_PATH = "/me/ghosthacks96/ghostsecure/app_icon.png";
+
+    // FXML files
+    private static final String LOGIN_FXML = "login.fxml";
+    private static final String SET_PASSWORD_FXML = "setPasswordGUI.fxml";
+
+    // Window titles
+    private static final String LOGIN_WINDOW_TITLE = "GhostSecure - Login";
+    private static final String SET_PASSWORD_WINDOW_TITLE = "GhostSecure - Set Password";
+
     public String loginError;
+
+    /**
+     * Opens the login dialog and waits for user input
+     * @return true if login was successful, false otherwise
+     */
     public boolean openLoginScene() {
         Main.logger.logDebug("openLoginScene() called");
+
+        // Check if we're already on the JavaFX Application Thread
+        if (Platform.isFxApplicationThread()) {
+            return openLoginSceneDirectly();
+        }
+
         try {
-            // Create a result holder for the boolean result
-            final boolean[] resultHolder = new boolean[1];
-
-            // Use CountDownLatch to wait for the JavaFX thread to complete
-            java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
-
-            // Ensure all UI operations run on the JavaFX Application Thread
-            Platform.runLater(() -> {
-                try {
-                    // Load the Login GUI
-                    FXMLLoader loginLoader = new FXMLLoader(Main.class.getResource("login.fxml"));
-                    Stage loginStage = new Stage();
-                    Scene loginScene = new Scene(loginLoader.load());
-                    Main.logger.logDebug("Login GUI loaded");
-                    loginStage.initModality(Modality.APPLICATION_MODAL);
-                    loginScene.getStylesheets().add(BootstrapFX.bootstrapFXStylesheet());
-                    loginStage.initStyle(StageStyle.DECORATED);
-                    loginScene.getStylesheets().add(Objects.requireNonNull(Main.class.getResource("/me/ghosthacks96/ghostsecure/dark-theme.css")).toExternalForm());
-                    loginStage.setAlwaysOnTop(true);
-                    loginStage.requestFocus();
-                    loginStage.getIcons().add(new javafx.scene.image.Image(Objects.requireNonNull(Main.class.getResource("/me/ghosthacks96/ghostsecure/app_icon.png")).toExternalForm()));
-                    // Set up the login stage
-                    loginStage.setTitle("GhostSecure - Login");
-                    loginStage.setScene(loginScene);
-                    LoginGUI loginController = loginLoader.getController();
-                    loginController.setError(loginError);
-                    Main.logger.logDebug("Login stage showing");
-
-                    loginStage.showAndWait();
-                    // Check if the login was successful
-                    resultHolder[0] = PASSWORD_HASH != null && PASSWORD_HASH.equals(LoginGUI.enteredPasswordHash);
-                    Main.logger.logDebug("Login result: " + resultHolder[0]);
-                } catch (IOException e) {
-                    Main.logger.logError("Error loading login GUI: " + e.getMessage());
-                    Main.logger.logDebug("Exception: " + e.getMessage(), e);
-                    resultHolder[0] = false; // Login failed due to error
-                } finally {
-                    latch.countDown(); // Signal that the JavaFX thread has completed
-                }
-            });
-
-            try {
-                latch.await(); // Wait for the JavaFX thread to complete
-            } catch (InterruptedException e) {
-                Main.logger.logError("Login process was interrupted: " + e.getMessage());
-                Thread.currentThread().interrupt();
-                return false;
-            }
-
-            return resultHolder[0];
+            Boolean result = executeOnFxThread(this::openLoginSceneDirectly);
+            return Boolean.TRUE.equals(result);
         } catch (Exception e) {
             Main.logger.logError("Unexpected error in openLoginScene: " + e.getMessage());
             Main.logger.logDebug("Exception: " + e.getMessage(), e);
-            return false; // Login failed due to error
+            return false;
         }
     }
 
+    /**
+     * Direct login scene opening when on FX thread
+     */
+    private boolean openLoginSceneDirectly() {
+        try {
+            Stage loginStage = createLoginStage();
+            LoginGUI loginController = getLoginController(loginStage);
+
+            Main.logger.logDebug("Login stage showing");
+            loginStage.showAndWait();
+
+            boolean loginSuccessful = isLoginSuccessful();
+            Main.logger.logDebug("Login result: " + loginSuccessful);
+
+            return loginSuccessful;
+        } catch (IOException e) {
+            Main.logger.logError("Error loading login GUI: " + e.getMessage());
+            Main.logger.logDebug("Exception: " + e.getMessage(), e);
+            return false;
+        } catch (Exception e) {
+            Main.logger.logError("Unexpected error in direct login: " + e.getMessage());
+            Main.logger.logDebug("Exception: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Shows the set password dialog and waits for user input
+     * @return the entered password if successful, null otherwise
+     */
     public String showSetPassPrompt() {
         Main.logger.logDebug("showSetPassPrompt() called");
+
+        if (Platform.isFxApplicationThread()) {
+            return showSetPassPromptDirectly();
+        }
+
         try {
-            // Create a result holder for the string result
-            final String[] resultHolder = new String[1];
-
-            // Use CountDownLatch to wait for the JavaFX thread to complete
-            java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
-
-            // Ensure all UI operations run on the JavaFX Application Thread
-            Platform.runLater(() -> {
-                try {
-                    FXMLLoader loader = new FXMLLoader(Main.class.getResource("setPasswordGUI.fxml"));
-                    Stage stage = new Stage();
-                    Scene scene = new Scene(loader.load());
-                    Main.logger.logDebug("SetPassword GUI loaded");
-                    stage.setTitle("GhostSecure - Set Password");
-                    stage.initModality(Modality.APPLICATION_MODAL); // Makes the prompt modal
-                    stage.initStyle(StageStyle.DECORATED);
-                    scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/dark-theme.css")).toExternalForm());
-                    stage.setScene(scene);
-                    stage.setResizable(false);
-                    stage.setAlwaysOnTop(true);
-                    stage.requestFocus();
-                    stage.getIcons().add(new javafx.scene.image.Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png")).toExternalForm()));
-                    SetPasswordGUI controller = loader.getController();
-                    Main.logger.logDebug("SetPassword stage showing");
-                    stage.showAndWait(); // Wait until the user closes the popup
-                    if (controller.isPasswordSet()) {
-                        Main.logger.logDebug("Password set successfully");
-                        resultHolder[0] = controller.getEnteredPassword(); // Store the successfully entered password
-                    } else {
-                        Main.logger.logDebug("Password setup was unsuccessful");
-                        resultHolder[0] = null;
-                    }
-                } catch (IOException e) {
-                    Main.logger.logError("Error loading set password GUI: " + e.getMessage());
-                    Main.logger.logDebug("Exception: " + e.getMessage(), e);
-                    resultHolder[0] = null;
-                } finally {
-                    latch.countDown(); // Signal that the JavaFX thread has completed
-                }
-            });
-
-            try {
-                latch.await(); // Wait for the JavaFX thread to complete
-            } catch (InterruptedException e) {
-                Main.logger.logError("Password setup process was interrupted: " + e.getMessage());
-                Thread.currentThread().interrupt();
-                return null;
-            }
-
-            return resultHolder[0];
+            return executeOnFxThread(this::showSetPassPromptDirectly);
         } catch (Exception e) {
             Main.logger.logError("Unexpected error in showSetPassPrompt: " + e.getMessage());
             Main.logger.logDebug("Exception: " + e.getMessage(), e);
-            return null; // Return null if the password setup was unsuccessful
+            return null;
         }
     }
 
-    public  void showInfo(String title, String message) {
+    /**
+     * Direct set password prompt when on FX thread
+     */
+    private String showSetPassPromptDirectly() {
+        try {
+            Stage passwordStage = createSetPasswordStage();
+            SetPasswordGUI controller = getSetPasswordController(passwordStage);
+
+            Main.logger.logDebug("SetPassword stage showing");
+            passwordStage.showAndWait();
+
+            return handlePasswordSetResult(controller);
+        } catch (IOException e) {
+            Main.logger.logError("Error loading set password GUI: " + e.getMessage());
+            Main.logger.logDebug("Exception: " + e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Show an information alert dialog
+     */
+    public void showInfo(String title, String message) {
         Main.logger.logDebug("showInfo() called: " + title + " - " + message);
         showAlert(Alert.AlertType.INFORMATION, title, message);
     }
 
-    public  void showWarning(String title, String message) {
+    /**
+     * Show a warning alert dialog
+     */
+    public void showWarning(String title, String message) {
         Main.logger.logDebug("showWarning() called: " + title + " - " + message);
         showAlert(Alert.AlertType.WARNING, title, message);
     }
 
-    public  void showError(String title, String message) {
+    /**
+     * Show an error alert dialog
+     */
+    public void showError(String title, String message) {
         Main.logger.logDebug("showError() called: " + title + " - " + message);
         showAlert(Alert.AlertType.ERROR, title, message);
     }
 
-    private  void showAlert(Alert.AlertType type, String title, String message) {
-        Main.logger.logDebug("showAlert() called: " + type + ", " + title + ", " + message);
-        Platform.runLater(() -> {
-            Alert alert = new Alert(type);
-            alert.initModality(Modality.APPLICATION_MODAL);
-            alert.setTitle(title);
-            alert.setHeaderText(null); // No header text
-            alert.setContentText(message);
-            // Ensure the alert stays on top
-            Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
-            stage.setAlwaysOnTop(true);
+    /**
+     * Create and configure the login stage
+     */
+    private Stage createLoginStage() throws IOException {
+        // Validate resource exists
+        if (Main.class.getResource(LOGIN_FXML) == null) {
+            throw new IOException("FXML resource not found: " + LOGIN_FXML);
+        }
 
+        FXMLLoader loginLoader = new FXMLLoader(Main.class.getResource(LOGIN_FXML));
+        Scene loginScene = new Scene(loginLoader.load());
+
+        Main.logger.logDebug("Login GUI loaded");
+
+        Stage loginStage = new Stage();
+        configureStage(loginStage, loginScene, LOGIN_WINDOW_TITLE);
+
+        // Add BootstrapFX styling
+        try {
+            loginScene.getStylesheets().add(BootstrapFX.bootstrapFXStylesheet());
+        } catch (Exception e) {
+            Main.logger.logWarning("Failed to add BootstrapFX stylesheet: " + e.getMessage());
+        }
+
+        // Store the loader for later access to the controller
+        loginStage.setUserData(loginLoader);
+
+        return loginStage;
+    }
+
+    /**
+     * Get the login controller from the stage
+     */
+    private LoginGUI getLoginController(Stage loginStage) {
+        FXMLLoader loginLoader = (FXMLLoader) loginStage.getUserData();
+        if (loginLoader == null) {
+            throw new RuntimeException("Login loader is null");
+        }
+
+        LoginGUI loginController = loginLoader.getController();
+        if (loginController == null) {
+            throw new RuntimeException("Login controller is null");
+        }
+
+        loginController.setError(loginError);
+        return loginController;
+    }
+
+    /**
+     * Create and configure the set password stage
+     */
+    private Stage createSetPasswordStage() throws IOException {
+        FXMLLoader loader = new FXMLLoader(Main.class.getResource(SET_PASSWORD_FXML));
+        Scene scene = new Scene(loader.load());
+
+        Main.logger.logDebug("SetPassword GUI loaded");
+
+        Stage stage = new Stage();
+        configureStage(stage, scene, SET_PASSWORD_WINDOW_TITLE);
+        stage.setResizable(false);
+
+        // Store the loader for later access to the controller
+        stage.setUserData(loader);
+
+        return stage;
+    }
+
+    /**
+     * Get the set password controller from the stage
+     */
+    private SetPasswordGUI getSetPasswordController(Stage passwordStage) {
+        FXMLLoader loader = (FXMLLoader) passwordStage.getUserData();
+        return loader.getController();
+    }
+
+    /**
+     * Handle the result of password setting
+     */
+    private String handlePasswordSetResult(SetPasswordGUI controller) {
+        if (controller.isPasswordSet()) {
+            Main.logger.logDebug("Password set successfully");
+            return controller.getEnteredPassword();
+        } else {
+            Main.logger.logDebug("Password setup was unsuccessful");
+            return null;
+        }
+    }
+
+    /**
+     * Configure common stage properties
+     */
+    private void configureStage(Stage stage, Scene scene, String title) {
+        stage.setTitle(title);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.initStyle(StageStyle.DECORATED);
+        stage.setScene(scene);
+        stage.setAlwaysOnTop(true);
+        stage.requestFocus();
+
+        // Force stage to front and ensure it's not minimized
+        stage.toFront();
+        stage.setIconified(false);
+
+        // Apply dark theme
+        try {
+            scene.getStylesheets().add(
+                    Objects.requireNonNull(getClass().getResource(DARK_THEME_CSS)).toExternalForm()
+            );
+        } catch (Exception e) {
+            Main.logger.logWarning("Failed to apply dark theme: " + e.getMessage());
+        }
+
+        // Set application icon
+        try {
+            stage.getIcons().add(
+                    new Image(Objects.requireNonNull(getClass().getResource(APP_ICON_PATH)).toExternalForm())
+            );
+        } catch (Exception e) {
+            Main.logger.logWarning("Failed to set application icon: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Check if login was successful by comparing password hashes
+     */
+    private boolean isLoginSuccessful() {
+        return passwordHash != null && passwordHash.equals(LoginGUI.enteredPasswordHash);
+    }
+
+    /**
+     * Execute a task on the JavaFX Application Thread and wait for completion
+     */
+    private <T> T executeOnFxThread(FxTask<T> task) {
+        final Object[] resultHolder = new Object[1];
+        CountDownLatch latch = new CountDownLatch(1);
+
+        Platform.runLater(() -> {
+            try {
+                resultHolder[0] = task.execute();
+            } catch (Exception e) {
+                resultHolder[0] = e;
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        try {
+            // Add timeout to prevent indefinite waiting
+            boolean completed = latch.await(30, TimeUnit.SECONDS);
+            if (!completed) {
+                Main.logger.logError("FX thread execution timed out after 30 seconds");
+                return null;
+            }
+        } catch (InterruptedException e) {
+            Main.logger.logError("FX thread execution was interrupted: " + e.getMessage());
+            Thread.currentThread().interrupt();
+            return null;
+        }
+
+        // If an exception was thrown, handle it
+        if (resultHolder[0] instanceof Exception e) {
+            Main.logger.logError("Error in FX thread: " + e.getMessage(), e);
+            return null;
+        }
+
+        @SuppressWarnings("unchecked")
+        T result = (T) resultHolder[0];
+        return result;
+    }
+
+    /**
+     * Show an alert dialog with the specified type, title, and message
+     */
+    private void showAlert(Alert.AlertType type, String title, String message) {
+        Main.logger.logDebug("showAlert() called: " + type + ", " + title + ", " + message);
+
+        Platform.runLater(() -> {
+            Alert alert = createAlert(type, title, message);
             alert.showAndWait();
         });
     }
 
+    /**
+     * Create and configure an alert dialog
+     */
+    private Alert createAlert(Alert.AlertType type, String title, String message) {
+        Alert alert = new Alert(type);
+        alert.initModality(Modality.APPLICATION_MODAL);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+
+        // Ensure the alert stays on top
+        Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+        stage.setAlwaysOnTop(true);
+
+        return alert;
+    }
+
+    /**
+     * Functional interface for tasks that need to be executed on the JavaFX thread
+     */
+    @FunctionalInterface
+    private interface FxTask<T> {
+        T execute() throws Exception;
+    }
 }

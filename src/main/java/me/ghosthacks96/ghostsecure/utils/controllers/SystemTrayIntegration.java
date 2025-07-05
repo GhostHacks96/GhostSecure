@@ -1,141 +1,352 @@
 package me.ghosthacks96.ghostsecure.utils.controllers;
 
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
 import javafx.stage.Stage;
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.gui.HomeGUI;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Optional;
 
-import static me.ghosthacks96.ghostsecure.Main.logger;
-
+/**
+ * Manages system tray integration for the GhostSecure application.
+ * Provides background access to application functions through a system tray icon.
+ */
 public class SystemTrayIntegration {
+
+    // Constants
+    private static final String TRAY_ICON_PATH = "/me/ghosthacks96/ghostsecure/tray_icon.png";
+    private static final String TRAY_TOOLTIP = "GhostSecure";
+    private static final String MODE_LOCK = "lock";
+    private static final String MODE_UNLOCK = "unlock";
+
+    // Menu item labels
+    private static final String MENU_OPEN_GUI = "Open GUI";
+    private static final String MENU_START_SERVICE = "Start Service";
+    private static final String MENU_STOP_SERVICE = "Stop Service";
+
+    // Error messages
+    private static final String ERROR_TITLE = "No";
+    private static final String ERROR_MESSAGE = "Are you sure you're supposed to be messing with this?";
+    private static final String ALREADY_RUNNING_TITLE = "Already Running";
+    private static final String ALREADY_RUNNING_MESSAGE = "The service is already running. If you want to stop it, please use the stop button.";
+    private static final String NOT_RUNNING_TITLE = "Not Running";
+    private static final String NOT_RUNNING_MESSAGE = "The service is not running. If you want to start it, please use the start button.";
+
+    // Static reference to tray icon
     public static TrayIcon trayIcon;
 
+    // Instance fields
+    private static Logging logger;
+    private Stage primaryStage;
+
+    public Main main;
+
+    /**
+     * Constructor initializes the system tray integration.
+     */
+    public SystemTrayIntegration(Main main) {
+        this.main = main;
+        logger = Main.logger;
+    }
+
+    /**
+     * Set up the system tray integration with the given primary stage.
+     *
+     * @param primaryStage The primary JavaFX stage to control
+     */
     public void setupSystemTray(Stage primaryStage) {
-        logger.logDebug("setupSystemTray() called");
+        logger.logDebug("Setting up system tray integration...");
+
+        this.primaryStage = primaryStage;
+
+        if (!initializeSystemTray()) {
+            return;
+        }
+
+        try {
+            Image trayImage = loadTrayIcon();
+            PopupMenu popupMenu = createPopupMenu();
+
+            trayIcon = new TrayIcon(trayImage, TRAY_TOOLTIP, popupMenu);
+            trayIcon.setImageAutoSize(true);
+
+            SystemTray.getSystemTray().add(trayIcon);
+            logger.logInfo("System tray integration setup successfully.");
+
+        } catch (Exception e) {
+            logger.logError("Failed to setup system tray", e);
+        }
+    }
+
+    /**
+     * Initialize system tray prerequisites.
+     *
+     * @return true if initialization successful, false otherwise
+     */
+    private boolean initializeSystemTray() {
         // Ensure AWT is initialized
-        java.awt.Toolkit.getDefaultToolkit();
+        Toolkit.getDefaultToolkit();
 
         // Prevent application from exiting when primary stage is closed
         Platform.setImplicitExit(false);
 
         if (!SystemTray.isSupported()) {
-            logger.logDebug("System tray not supported!");
-            System.err.println("System tray not supported!");
-            return;
+            logger.logWarning("System tray not supported on this platform!");
+            return false;
         }
+
         logger.logDebug("System tray is supported");
+        return true;
+    }
 
-        // Load an image for the tray icon
-        Image trayImage = Toolkit.getDefaultToolkit().getImage(
-                SystemTrayIntegration.class.getResource("/me/ghosthacks96/ghostsecure/tray_icon.png")
-        );
-
-        // Create a popup menu
-        PopupMenu popupMenu = new PopupMenu();
-
-        // Restore menu item
-        MenuItem restoreItem = new MenuItem("Open GUI");
-        restoreItem.addActionListener(e -> Platform.runLater(() -> {
-            logger.logDebug("Restore menu item clicked");
-            if (primaryStage != null) {
-                if (Main.sgh.openLoginScene()) {
-                    logger.logDebug("Login successful from tray restore");
-                    // Use the existing HomeGUI controller from the mainLoader
-                    try {
-                        HomeGUI controller = Main.mainLoader.getController();
-                        if (controller != null) {
-                            controller.updateServiceStatus();
-                        }
-                    } catch (Exception ex) {
-                        logger.logError("Failed to update HomeGUI from tray: " + ex.getMessage());
-                    }
-                    primaryStage.show();
-                    primaryStage.toFront();
-                } else {
-                    logger.logDebug("Login failed from tray restore");
-                    Main.sgh.showError("No", "Are you sure you're supposed to be messing with this?");
-                }
-            }
-        }));
-        popupMenu.add(restoreItem);
-
-        MenuItem starterItem = new MenuItem("Start Service");
-        starterItem.addActionListener(e -> Platform.runLater(() -> {
-            logger.logDebug("Start Service menu item clicked");
-            if (!ServiceController.isServiceRunning()) {
-                if (Main.sgh.openLoginScene()) {
-                    logger.logDebug("Login successful for start service");
-                    logger.logInfo("Starting locking service.");
-                    if (Main.config.getJsonConfig().get("mode").getAsString().equals("unlock")) {
-                        Main.config.getJsonConfig().remove("mode");
-                        Main.config.getJsonConfig().addProperty("mode", "lock");
-                    }
-                    Config.saveConfig();
-                    try {
-                        HomeGUI controller = Main.mainLoader.getController();
-                        if (controller != null) {
-                            controller.updateServiceStatus();
-                        }
-                    } catch (Exception ex) {
-                        logger.logError("Failed to update HomeGUI from tray: " + ex.getMessage());
-                    }
-                    logger.logInfo("Locking service started.");
-                } else {
-                    logger.logDebug("Login failed for start service");
-                    Main.sgh.showError("No", "Are you sure you're supposed to be messing with this?");
-                }
-            } else {
-                logger.logDebug("Start service requested but already running");
-                Main.sgh.showWarning("Already Running", "The service is already running. If you want to stop it, please use the stop button.");
-                Main.logger.logWarning("Start requested, but the service is already running.");
-            }
-        }));
-        popupMenu.add(starterItem);
-
-        MenuItem stopperItem = new MenuItem("Stop Service");
-        stopperItem.addActionListener(e -> Platform.runLater(() -> {
-            logger.logDebug("Stop Service menu item clicked");
-            if (ServiceController.isServiceRunning()) {
-                if (Main.sgh.openLoginScene()) {
-                    logger.logDebug("Login successful for stop service");
-                    logger.logInfo("Stopping locking service.");
-                    if (Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
-                        Main.config.getJsonConfig().remove("mode");
-                        Main.config.getJsonConfig().addProperty("mode", "unlock");
-                    }
-                    Config.saveConfig();
-                    try {
-                        HomeGUI controller = Main.mainLoader.getController();
-                        if (controller != null) {
-                            controller.updateServiceStatus();
-                        }
-                    } catch (Exception ex) {
-                        logger.logError("Failed to update HomeGUI from tray: " + ex.getMessage());
-                    }
-                    logger.logInfo("Locking service stopped.");
-                } else {
-                    logger.logDebug("Login failed for stop service");
-                    Main.sgh.showError("No", "Are you sure you're supposed to be messing with this?");
-                }
-            } else {
-                logger.logDebug("Stop service requested but not running");
-                Main.sgh.showWarning("Not Running", "The service is not running. If you want to start it, please use the start button.");
-                Main.logger.logWarning("Stop requested, but the service is not running.");
-            }
-        }));
-        popupMenu.add(stopperItem);
-
-        // Add the popup menu to the tray icon and add the icon to the system tray
-        trayIcon = new TrayIcon(trayImage, "GhostSecure", popupMenu);
-        trayIcon.setImageAutoSize(true);
+    /**
+     * Load the tray icon image.
+     *
+     * @return The loaded tray icon image
+     * @throws RuntimeException if the icon cannot be loaded
+     */
+    private Image loadTrayIcon() {
         try {
-            SystemTray.getSystemTray().add(trayIcon);
-        } catch (AWTException e) {
-            logger.logError("Failed to add tray icon: " + e.getMessage());
+            Image trayImage = Toolkit.getDefaultToolkit().getImage(
+                    SystemTrayIntegration.class.getResource(TRAY_ICON_PATH)
+            );
+
+            if (trayImage == null) {
+                throw new RuntimeException("Tray icon resource not found: " + TRAY_ICON_PATH);
+            }
+
+            return trayImage;
+
+        } catch (Exception e) {
+            logger.logError("Failed to load tray icon", e);
+            throw new RuntimeException("Could not load tray icon", e);
         }
     }
-}
 
+    /**
+     * Create the popup menu for the system tray icon.
+     *
+     * @return The configured popup menu
+     */
+    private PopupMenu createPopupMenu() {
+        PopupMenu popupMenu = new PopupMenu();
+
+        popupMenu.add(createOpenGuiMenuItem());
+        popupMenu.addSeparator();
+        popupMenu.add(createStartServiceMenuItem());
+        popupMenu.add(createStopServiceMenuItem());
+        popupMenu.addSeparator();
+        popupMenu.add(createExitMenuItem());
+
+        return popupMenu;
+    }
+
+    private MenuItem createExitMenuItem() {
+        MenuItem exitItem = new MenuItem("Exit");
+        exitItem.addActionListener(e -> {
+            logger.logDebug("Exit menu item clicked");
+            authenticateAndExecute(main::shutDownSystem, "exit application");
+        });
+        return exitItem;
+    }
+
+    /**
+     * Create the "Open GUI" menu item.
+     */
+    private MenuItem createOpenGuiMenuItem() {
+        MenuItem openGuiItem = new MenuItem(MENU_OPEN_GUI);
+        openGuiItem.addActionListener(new OpenGuiActionListener());
+        return openGuiItem;
+    }
+
+    /**
+     * Create the "Start Service" menu item.
+     */
+    private MenuItem createStartServiceMenuItem() {
+        MenuItem startServiceItem = new MenuItem(MENU_START_SERVICE);
+        startServiceItem.addActionListener(new StartServiceActionListener());
+        return startServiceItem;
+    }
+
+    /**
+     * Create the "Stop Service" menu item.
+     */
+    private MenuItem createStopServiceMenuItem() {
+        MenuItem stopServiceItem = new MenuItem(MENU_STOP_SERVICE);
+        stopServiceItem.addActionListener(new StopServiceActionListener());
+        return stopServiceItem;
+    }
+
+    /**
+     * Authenticate user and execute action if successful.
+     *
+     * @param action The action to execute after successful authentication
+     * @param actionName The name of the action for logging purposes
+     */
+    private void authenticateAndExecute(Runnable action, String actionName) {
+        if (Main.sgh.openLoginScene()) {
+            logger.logDebug("Login successful for " + actionName);
+            action.run();
+        } else {
+            logger.logDebug("Login failed for " + actionName);
+            Main.sgh.showError(ERROR_TITLE, ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Update the service mode in configuration.
+     *
+     * @param mode The new mode to set
+     */
+    private void updateServiceMode(String mode) {
+        try {
+            Main.config.getJsonConfig().remove("mode");
+            Main.config.getJsonConfig().addProperty("mode", mode);
+            Config.saveConfig();
+
+            updateHomeGuiIfAvailable();
+
+        } catch (Exception e) {
+            logger.logError("Failed to update service mode to " + mode, e);
+        }
+    }
+
+    /**
+     * Update the HomeGUI controller if available.
+     */
+    private void updateHomeGuiIfAvailable() {
+        try {
+            Optional<HomeGUI> controller = getHomeGuiController();
+            controller.ifPresent(HomeGUI::updateServiceStatus);
+        } catch (Exception e) {
+            logger.logError("Failed to update HomeGUI from tray", e);
+        }
+    }
+
+    /**
+     * Get the HomeGUI controller if available.
+     *
+     * @return Optional containing the controller if available
+     */
+    private Optional<HomeGUI> getHomeGuiController() {
+        try {
+            if (Main.mainLoader != null) {
+                HomeGUI controller = Main.mainLoader.getController();
+                return Optional.ofNullable(controller);
+            }
+        } catch (Exception e) {
+            logger.logDebug("HomeGUI controller not available", e);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Validate that the primary stage is available.
+     *
+     * @return true if stage is available, false otherwise
+     */
+    private boolean validatePrimaryStage() {
+        if (primaryStage == null) {
+            logger.logError("Primary stage is null");
+            Main.sgh.showError(ERROR_TITLE, "Application stage not available");
+            return false;
+        }
+        return true;
+    }
+
+    // Action Listeners
+
+    /**
+     * Action listener for opening the GUI.
+     */
+    private class OpenGuiActionListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            Platform.runLater(() -> {
+                logger.logDebug("Open GUI menu item clicked");
+
+                if (!validatePrimaryStage()) {
+                    return;
+                }
+
+                authenticateAndExecute(() -> {
+                    primaryStage.show();
+                    primaryStage.toFront();
+                    logger.logDebug("GUI opened successfully from tray");
+                }, "open GUI");
+            });
+        }
+    }
+
+    /**
+     * Action listener for starting the service.
+     */
+    private class StartServiceActionListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            Platform.runLater(() -> {
+                logger.logDebug("Start Service menu item clicked");
+
+                if (ServiceController.isServiceRunning()) {
+                    logger.logDebug("Start service requested but already running");
+                    Main.sgh.showWarning(ALREADY_RUNNING_TITLE, ALREADY_RUNNING_MESSAGE);
+                    logger.logWarning("Start requested, but the service is already running.");
+                    return;
+                }
+
+                authenticateAndExecute(() -> {
+                    logger.logInfo("Starting locking service.");
+                    updateServiceMode(MODE_LOCK);
+                    logger.logInfo("Locking service started.");
+                }, "start service");
+            });
+        }
+    }
+
+    /**
+     * Action listener for stopping the service.
+     */
+    private class StopServiceActionListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            Platform.runLater(() -> {
+                logger.logDebug("Stop Service menu item clicked");
+
+                if (!ServiceController.isServiceRunning()) {
+                    logger.logDebug("Stop service requested but not running");
+                    Main.sgh.showWarning(NOT_RUNNING_TITLE, NOT_RUNNING_MESSAGE);
+                    logger.logWarning("Stop requested, but the service is not running.");
+                    return;
+                }
+
+                authenticateAndExecute(() -> {
+                    logger.logInfo("Stopping locking service.");
+                    updateServiceMode(MODE_UNLOCK);
+                    logger.logInfo("Locking service stopped.");
+                }, "stop service");
+            });
+        }
+    }
+
+    /**
+     * Remove the tray icon from the system tray.
+     */
+    public static void removeTrayIcon() {
+        if (trayIcon != null) {
+            SystemTray.getSystemTray().remove(trayIcon);
+            logger.logDebug("Tray icon removed");
+        }
+    }
+
+    /**
+     * Check if system tray is supported on this platform.
+     *
+     * @return true if supported, false otherwise
+     */
+    public static boolean isSystemTraySupported() {
+        return SystemTray.isSupported();
+    }
+}

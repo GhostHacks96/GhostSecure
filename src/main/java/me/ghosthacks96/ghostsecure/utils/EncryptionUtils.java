@@ -8,8 +8,11 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.SecretKeyFactory;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
+
+import static me.ghosthacks96.ghostsecure.Main.logger;
 
 public class EncryptionUtils {
 
@@ -19,6 +22,29 @@ public class EncryptionUtils {
     private static final int GCM_TAG_LENGTH = 16;
     private static final int PBKDF2_ITERATIONS = 100000;
     private static final int KEY_LENGTH = 256;
+
+    /**
+     * Hash a password using SHA-256
+     */
+    public static String hashPassword(String password) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            logger.logError("Error hashing password: " + e.getMessage(), e);
+            return null;
+        }
+    }
 
     /**
      * Creates a 256-bit AES key from user-specific information
@@ -45,7 +71,7 @@ public class EncryptionUtils {
 
             return new SecretKeySpec(keyBytes, ALGORITHM);
         } catch (Exception e) {
-            me.ghosthacks96.ghostsecure.Main.logger.logError("Failed to derive key from user info", e);
+            logger.logError("Failed to derive key from user info", e);
             return null;
         }
     }
@@ -86,7 +112,7 @@ public class EncryptionUtils {
 
             return Base64.getEncoder().encodeToString(hash);
         } catch (Exception e) {
-            me.ghosthacks96.ghostsecure.Main.logger.logError("Failed to get system info", e);
+            logger.logError("Failed to get system info", e);
             return null;
         }
     }
@@ -117,7 +143,7 @@ public class EncryptionUtils {
 
             return Base64.getEncoder().encodeToString(encryptedWithIv);
         } catch (Exception e) {
-            me.ghosthacks96.ghostsecure.Main.logger.logError("Encryption failed", e);
+            logger.logError("Encryption failed", e);
             return null;
         }
     }
@@ -146,7 +172,7 @@ public class EncryptionUtils {
             byte[] decryptedData = cipher.doFinal(encrypted);
             return new String(decryptedData, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            me.ghosthacks96.ghostsecure.Main.logger.logError("Decryption failed", e);
+            logger.logError("Decryption failed", e);
             return null;
         }
     }
