@@ -107,6 +107,7 @@ public class HomeGUI {
         bindTableData();
         updateServiceStatus();
 
+
         logger.logInfo("HomeGUI initialization complete.");
     }
 
@@ -262,6 +263,7 @@ public class HomeGUI {
 
         setServiceMode("lock");
         Config.saveConfig();
+        ServiceController.startBlockerDaemon();
         Platform.runLater(this::updateServiceStatus);
 
         logger.logInfo("Locking service started.");
@@ -273,6 +275,7 @@ public class HomeGUI {
 
         setServiceMode("unlock");
         Config.saveConfig();
+        ServiceController.stopBlockerDaemon();
         Platform.runLater(this::updateServiceStatus);
 
         logger.logInfo("Locking service stopped.");
@@ -705,3 +708,4 @@ public class HomeGUI {
         }
     }
 }
+

@@ -395,7 +395,11 @@ public class Main extends Application {
             HomeGUI homeController = mainLoader.getController();
             homeController.updateServiceStatus();
         }
-
+        mainStage.setOnCloseRequest(event -> {
+            if(!ServiceController.isServiceRunning()){
+                shutDownSystem();
+            }
+        });
 
         mainStage.show();
         mainStage.toFront();

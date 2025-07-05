@@ -31,6 +31,9 @@ public class ServiceController {
     private static ScheduledExecutorService scheduler;
     private static ScheduledFuture<?> blockerTask;
 
+    private static long lastCheckLogTime = 0;
+    private static final long CHECK_LOG_INTERVAL_MS = 60_000; // 1 minute
+
     /**
      * Start the blocker daemon service
      * @return true if started successfully, false otherwise
@@ -282,7 +285,11 @@ public class ServiceController {
     }
 
     private static void checkFolders() {
-        Main.logger.logDebug("checkFolders() called");
+        long now = System.currentTimeMillis();
+        if (now - lastCheckLogTime > CHECK_LOG_INTERVAL_MS) {
+            Main.logger.logDebug("checkFolders() called");
+            lastCheckLogTime = now;
+        }
         try {
             for (LockedItem li : Main.lockedItems) {
                 if (isShuttingDown.get()) {

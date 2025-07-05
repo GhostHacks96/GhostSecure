@@ -206,7 +206,13 @@ public class SystemTrayIntegration {
             Main.config.getJsonConfig().remove("mode");
             Main.config.getJsonConfig().addProperty("mode", mode);
             Config.saveConfig();
-
+            if(MODE_LOCK.equals(mode)) {
+                logger.logInfo("Service mode set to LOCK");
+                ServiceController.startBlockerDaemon();
+            } else if (MODE_UNLOCK.equals(mode)) {
+                ServiceController.stopBlockerDaemon();
+                logger.logInfo("Service mode set to UNLOCK");
+            }
             updateHomeGuiIfAvailable();
 
         } catch (Exception e) {
