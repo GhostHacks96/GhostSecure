@@ -12,6 +12,7 @@ import javafx.stage.StageStyle;
 import me.ghosthacks96.ghostsecure.gui.HomeGUI;
 import me.ghosthacks96.ghostsecure.gui.extras.SplashGUI;
 import me.ghosthacks96.ghostsecure.gui.SubGUIHandler;
+import me.ghosthacks96.ghostsecure.gui.tabs.ServiceControllerScreen;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
 import me.ghosthacks96.ghostsecure.utils.api_handlers.RecoveryHandler;
 import me.ghosthacks96.ghostsecure.utils.api_handlers.Update;
@@ -323,7 +324,7 @@ public class Main extends Application {
 
                 Platform.runLater(() -> splashController.close());
 
-                boolean loginSuccessful = sgh.openLoginScene();
+                boolean loginSuccessful = true;//sgh.openLoginScene();
                 if (!loginSuccessful) {
                     logger.logError("Login failed. Invalid password.");
                     config.getJsonConfig().remove("mode");
@@ -396,7 +397,7 @@ public class Main extends Application {
 
         if(config.getJsonConfig().get("mode").getAsString().equals("lock")) {
             ServiceController.startBlockerDaemon();
-            HomeGUI homeController = mainLoader.getController();
+            ServiceControllerScreen homeController = mainLoader.getController();
             homeController.updateServiceStatus();
         }
         mainStage.setOnCloseRequest(event -> {

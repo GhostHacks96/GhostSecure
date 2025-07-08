@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.utils.encryption.EncryptionUtils;
-import me.ghosthacks96.ghostsecure.utils.file_handlers.Config;
 import me.ghosthacks96.ghostsecure.utils.file_handlers.Logging;
 import me.ghosthacks96.ghostsecure.gui.SubGUIHandler;
 
@@ -37,7 +36,7 @@ public class RecoveryHandler {
 
     /**
      * Checks if recovery mode should be activated
-     * @return true if recovery file exists and recovery should be attempted
+     * @return true if a recovery file exists and recovery should be attempted
      */
     public boolean shouldEnterRecoveryMode() {
         File recoveryFile = new File(RECOVERY_FILE);
@@ -126,7 +125,7 @@ public class RecoveryHandler {
 
     /**
      * Reads the recovery key from the rk.txt file
-     * @return the recovery key string, or null if error
+     * @return the recovery key string, or null if there's an error
      */
     private String readRecoveryKey() {
         try {
@@ -312,6 +311,7 @@ public class RecoveryHandler {
         }
     }
 
+    @SuppressWarnings("All")
     private void handleAPIException(Exception e) {
         switch (e) {
             case java.net.SocketTimeoutException socketTimeoutException -> {
@@ -347,9 +347,9 @@ public class RecoveryHandler {
             String hashedPassword = EncryptionUtils.hashPassword(newPassword);
             logger.logDebug("Password hashed successfully");
 
-            Config.passwordHash = hashedPassword;
+            Main.config.setPasswordHash(hashedPassword);
             Main.config.getJsonConfig().addProperty("password", hashedPassword);
-            Config.saveConfig();
+            Main.config.saveConfig();
 
             logger.logInfo("Password updated successfully in configuration");
             return true;
@@ -389,6 +389,7 @@ public class RecoveryHandler {
     /**
      * Helper class to encapsulate API response data
      */
+    @SuppressWarnings("All")
     private static class APIResponse {
         private final int responseCode;
         private final String body;

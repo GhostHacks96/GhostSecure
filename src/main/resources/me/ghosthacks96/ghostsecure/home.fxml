@@ -50,7 +50,7 @@
                     </style>
                 </Label>
 
-                <Label fx:id="lockStatus" text="Locked?" textAlignment="CENTER" styleClass="status-label">
+                <Label fx:id="lockStatus" text="🔒 LOCKED" textAlignment="CENTER" styleClass="status-label">
                     <font>
                         <Font name="System Bold" size="14" />
                     </font>
@@ -61,15 +61,10 @@
 
     <!-- Sidebar Navigation -->
     <left>
-        <VBox fx:id="sidebarNav" prefWidth="250" spacing="5">
+        <VBox fx:id="sidebarNav" prefWidth="250" spacing="8" styleClass="sidebar">
             <padding>
                 <Insets top="20" bottom="20" left="15" right="15" />
             </padding>
-            <style>
-                -fx-background-color: #1a1a1af2;
-                -fx-border-color: #00d4ff20;
-                -fx-border-width: 0 1 0 0;
-            </style>
 
             <!-- Navigation Title -->
             <Label text="Navigation" textAlignment="CENTER">
@@ -101,13 +96,13 @@
                 </font>
             </Button>
 
-            <Button fx:id="settingsNav" text="⛭ Settings" prefWidth="220" prefHeight="50" styleClass="nav-button">
+            <Button fx:id="settingsNav" text="⚙ Settings" prefWidth="220" prefHeight="50" styleClass="nav-button">
                 <font>
                     <Font name="System Bold" size="14" />
                 </font>
             </Button>
 
-            <Button fx:id="aboutNav" text="🛈 About" prefWidth="220" prefHeight="50" styleClass="nav-button">
+            <Button fx:id="aboutNav" text="ℹ About" prefWidth="220" prefHeight="50" styleClass="nav-button">
                 <font>
                     <Font name="System Bold" size="14" />
                 </font>
@@ -131,13 +126,8 @@
 
     <!-- Content Area -->
     <center>
-        <StackPane fx:id="contentArea">
-            <style>
-                -fx-background-color: #1e1e1ef2;
-                -fx-background-radius: 0 0 12 12;
-            </style>
-
-            <!-- Default loading content -->
+        <StackPane fx:id="contentArea" styleClass="content-area">
+            <!-- Loading content will be replaced by dynamically loaded FXML -->
             <VBox alignment="CENTER" spacing="20">
                 <Label text="Loading..." textAlignment="CENTER">
                     <font>

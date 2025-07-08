@@ -37,7 +37,7 @@ public class Update {
 
     /**
      * Checks for updates and launches updater if available
-     * @return true if update is available and updater was launched successfully, false otherwise
+     * @return true if the update is available and updater was launched successfully, false otherwise
      */
     public boolean updateCheck() {
         UpdateResponse response = checkForUpdates();
@@ -95,7 +95,7 @@ public class Update {
     }
 
     /**
-     * Checks for updates by sending POST request to the API
+     * Checks for updates by sending a POST request to the API
      * @return UpdateResponse object or null if no update available or error occurred
      */
     public static UpdateResponse checkForUpdates() {
@@ -278,8 +278,8 @@ public class Update {
     }
 
     /**
-     * Utility method to check if update is available without launching updater
-     * @return true if update is available, false otherwise
+     * Utility method to check if an update is available without launching updater
+     * @return true if the update is available, false otherwise
      */
     public static boolean isUpdateAvailable() {
         UpdateResponse response = checkForUpdates();

@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.stage.Stage;
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.gui.HomeGUI;
+import me.ghosthacks96.ghostsecure.gui.tabs.ServiceControllerScreen;
 import me.ghosthacks96.ghostsecure.utils.file_handlers.Config;
 import me.ghosthacks96.ghostsecure.utils.file_handlers.Logging;
 
@@ -205,9 +206,6 @@ public class SystemTrayIntegration {
      */
     private void updateServiceMode(String mode) {
         try {
-            Main.config.getJsonConfig().remove("mode");
-            Main.config.getJsonConfig().addProperty("mode", mode);
-            Config.saveConfig();
             if(MODE_LOCK.equals(mode)) {
                 logger.logInfo("Service mode set to LOCK");
                 ServiceController.startBlockerDaemon();
@@ -228,7 +226,7 @@ public class SystemTrayIntegration {
     private void updateHomeGuiIfAvailable() {
         try {
             Optional<HomeGUI> controller = getHomeGuiController();
-            controller.ifPresent(HomeGUI::updateServiceStatus);
+            controller.ifPresent(HomeGUI::updateLockStatus);
         } catch (Exception e) {
             logger.logError("Failed to update HomeGUI from tray", e);
         }
