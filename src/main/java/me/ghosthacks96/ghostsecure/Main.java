@@ -128,7 +128,7 @@ public class Main extends Application {
 
         // Apply dark theme
         splashScene.getStylesheets().add(
-                Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/dark-theme.css"))
+                Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/css/dark-theme.css"))
                         .toExternalForm()
         );
 
@@ -138,7 +138,7 @@ public class Main extends Application {
         splashStage.initStyle(StageStyle.UNDECORATED);
         splashStage.setScene(splashScene);
         splashStage.getIcons().add(
-                new Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png"))
+                new Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/imgs/app_icon.png"))
                         .toExternalForm())
         );
         splashStage.setTitle("GhostSecure - Loading");
@@ -380,14 +380,14 @@ public class Main extends Application {
 
         // Apply dark theme
         mainScene.getStylesheets().add(
-                Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/dark-theme.css"))
+                Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/css/dark-theme.css"))
                         .toExternalForm()
         );
 
         mainStage.setTitle("Ghost Secure - Home");
         mainStage.setScene(mainScene);
         mainStage.getIcons().add(
-                new Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/app_icon.png"))
+                new Image(Objects.requireNonNull(getClass().getResource("/me/ghosthacks96/ghostsecure/imgs/app_icon.png"))
                         .toExternalForm())
         );
         mainStage.initStyle(StageStyle.DECORATED);

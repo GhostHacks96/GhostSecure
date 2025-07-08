@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.SettingsController" spacing="30">
+    <padding>
+        <Insets top="35" bottom="35" left="35" right="35" />
+    </padding>
+    <style>
+        -fx-background-color: #1e1e1ef2;
+        -fx-background-radius: 0 0 12 12;
+    </style>
+
+    <Label text="Application Settings" textAlignment="CENTER">
+        <font>
+            <Font name="System Bold" size="22" />
+        </font>
+        <style>
+            -fx-text-fill: #00d4ff;
+            -fx-effect: dropshadow(gaussian, #00d4ff4d, 3, 0, 0, 0);
+        </style>
+    </Label>
+
+    <!-- Password Change Section -->
+    <VBox spacing="20" alignment="CENTER">
+        <Label text="Change Password" textAlignment="CENTER">
+            <font>
+                <Font name="System Bold" size="18" />
+            </font>
+            <style>
+                -fx-text-fill: #ffffff;
+            </style>
+        </Label>
+
+        <VBox spacing="15" alignment="CENTER" maxWidth="350">
+            <PasswordField fx:id="currentPasswordField" promptText="Current Password" prefWidth="350" prefHeight="45">
+                <font>
+                    <Font size="14" />
+                </font>
+            </PasswordField>
+
+            <PasswordField fx:id="newPasswordField" promptText="New Password" prefWidth="350" prefHeight="45">
+                <font>
+                    <Font size="14" />
+                </font>
+            </PasswordField>
+
+            <PasswordField fx:id="confirmPasswordField" promptText="Confirm New Password" prefWidth="350" prefHeight="45">
+                <font>
+                    <Font size="14" />
+                </font>
+            </PasswordField>
+
+            <Label fx:id="passwordChangeStatus" text="" textAlignment="CENTER" maxWidth="350" wrapText="true">
+                <font>
+                    <Font size="12" />
+                </font>
+            </Label>
+
+            <Button fx:id="changePasswordButton" onAction="#changePassword" text="CHANGE PASSWORD" prefWidth="200" prefHeight="45" styleClass="primary">
+                <font>
+                    <Font name="System Bold" size="12" />
+                </font>
+            </Button>
+        </VBox>
+    </VBox>
+
+    <Separator>
+        <style>
+            -fx-background-color: #00d4ff40;
+        </style>
+    </Separator>
+
+    <!-- Import/Export Section -->
+    <VBox spacing="20" alignment="CENTER">
+        <Label text="Import/Export" textAlignment="CENTER">
+            <font>
+                <Font name="System Bold" size="18" />
+            </font>
+            <style>
+                -fx-text-fill: #ffffff;
+            </style>
+        </Label>
+        <HBox spacing="15" alignment="CENTER">
+            <Button fx:id="import" onAction="#importSettings" text="Import" prefWidth="180" prefHeight="45" styleClass="primary">
+                <font>
+                    <Font name="System Bold" size="12" />
+                </font>
+            </Button>
+            <Button fx:id="export" onAction="#exportSettings" text="Export" prefWidth="180" prefHeight="45" styleClass="primary">
+                <font>
+                    <Font name="System Bold" size="12" />
+                </font>
+            </Button>
+        </HBox>
+    </VBox>
+
+    <Separator>
+        <style>
+            -fx-background-color: #00d4ff40;
+        </style>
+    </Separator>
+
+    <!-- Debug Settings Section -->
+    <VBox spacing="20" alignment="CENTER">
+        <Label text="Debug Settings" textAlignment="CENTER">
+            <font>
+                <Font name="System Bold" size="18" />
+            </font>
+            <style>
+                -fx-text-fill: #ffffff;
+            </style>
+        </Label>
+
+        <VBox spacing="15" alignment="CENTER" maxWidth="350">
+            <HBox spacing="15" alignment="CENTER">
+                <CheckBox fx:id="debugModeCheckBox" onAction="#toggleDebugMode">
+                    <style>
+                        -fx-text-fill: #ffffff;
+                    </style>
+                </CheckBox>
+                <Label text="Enable Debug Mode" textAlignment="CENTER">
+                    <font>
+                        <Font size="14" />
+                    </font>
+                    <style>
+                        -fx-text-fill: #ffffff;
+                    </style>
+                </Label>
+            </HBox>
+
+            <Label text="Enable detailed logging and debug information for troubleshooting" textAlignment="CENTER" maxWidth="300" wrapText="true">
+                <font>
+                    <Font size="12" />
+                </font>
+                <style>
+                    -fx-text-fill: #b0b0b0;
+                </style>
+            </Label>
+
+            <Label fx:id="debugStatus" text="" textAlignment="CENTER" maxWidth="350" wrapText="true">
+                <font>
+                    <Font size="12" />
+                </font>
+            </Label>
+        </VBox>
+    </VBox>
+</VBox>

@@ -23,8 +23,8 @@ public class DebugConsole {
     private Stage consoleStage;
     private VBox consoleContainer;
 
-    private static final String DARK_THEME_CSS = "/me/ghosthacks96/ghostsecure/dark-theme.css";
-    private static final String APP_ICON_PATH = "/me/ghosthacks96/ghostsecure/app_icon.png";
+    private static final String DARK_THEME_CSS = "/me/ghosthacks96/ghostsecure/css/dark-theme.css";
+    private static final String APP_ICON_PATH = "/me/ghosthacks96/ghostsecure/imgs/app_icon.png";
 
     private DebugConsole() {
         setupConsole();

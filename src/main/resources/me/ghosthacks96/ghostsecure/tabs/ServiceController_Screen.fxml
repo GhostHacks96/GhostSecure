@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.ServiceControllerScreen" alignment="CENTER" spacing="40">
+    <padding>
+        <Insets top="60" bottom="60" left="50" right="50" />
+    </padding>
+    <style>
+        -fx-ackground-color: #1e1e1ef2;
+        -fx-background-radius: 0 0 12 12;
+    </style>
+
+    <VBox alignment="CENTER" spacing="15">
+        <Label text="Service Management" textAlignment="CENTER">
+            <font>
+                <Font name="System Bold" size="26" />
+            </font>
+            <style>
+                -fx-text-fill: #00d4ff;
+                -fx-effect: dropshadow(gaussian, #00d4ff4d, 3, 0, 0, 0);
+            </style>
+        </Label>
+
+        <Label text="Control the GhostSecure service to enable or disable protection" textAlignment="CENTER" maxWidth="400" wrapText="true">
+            <font>
+                <Font size="16" />
+            </font>
+            <style>
+                -fx-text-fill: #b0b0b0;
+            </style>
+        </Label>
+    </VBox>
+
+    <HBox spacing="30" alignment="CENTER">
+        <Button fx:id="startServiceButton" onAction="#startService" text="START SERVICE" prefWidth="180" prefHeight="55" styleClass="success">
+            <font>
+                <Font name="System Bold" size="14" />
+            </font>
+        </Button>
+
+        <Button fx:id="stopServiceButton" onAction="#stopService" text="STOP SERVICE" prefWidth="180" prefHeight="55" styleClass="danger">
+            <font>
+                <Font name="System Bold" size="14" />
+            </font>
+        </Button>
+    </HBox>
+</VBox>

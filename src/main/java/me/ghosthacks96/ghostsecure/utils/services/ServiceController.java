@@ -173,11 +173,10 @@ public class ServiceController {
             boolean running = isRunning.get() &&
                     scheduler != null &&
                     !scheduler.isShutdown() &&
-                    !scheduler.isTerminated() &&
-                    Main.config.getJsonConfig().get("mode").getAsString().equals("lock");
+                    !scheduler.isTerminated();
 
             if (running) {
-                Main.logger.logInfo("Service is active and running in locking mode.");
+                Main.logger.logInfo("Service is active.");
             } else {
                 Main.logger.logInfo("Service is not running.");
             }
@@ -325,7 +324,7 @@ public class ServiceController {
 
                     Main.logger.logDebug("Found " + allPaths.size() + " paths under " + rootPath);
 
-                    if (li.isLocked() && Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
+                    if (li.isLocked()) {
                         // When locking: Start from deepest files/folders first
                         allPaths.stream()
                                 .sorted((p1, p2) -> Integer.compare(p2.getNameCount(), p1.getNameCount()))
@@ -373,7 +372,7 @@ public class ServiceController {
                 return;
             }
 
-            if (li.isLocked() && Main.config.getJsonConfig().get("mode").getAsString().equals("lock") && !isShuttingDown.get()) {
+            if (li.isLocked()&& !isShuttingDown.get()) {
                 // Deny all access to the path
                 AclEntry denyAllAccess = AclEntry.newBuilder()
                         .setType(AclEntryType.DENY)
@@ -430,8 +429,7 @@ public class ServiceController {
                 }
 
                 for (LockedItem li : Main.lockedItems) {
-                    if (line.contains(li.getName()) && li.isLocked()
-                            && Main.config.getJsonConfig().get("mode").getAsString().equals("lock")) {
+                    if (line.contains(li.getName()) && li.isLocked()) {
                         if (li.getName().contains(".exe")) {
                             Main.logger.logWarning("Process " + li.getName() + " is locked and will be terminated.");
                             Main.logger.logDebug("Killing process: " + li.getName());

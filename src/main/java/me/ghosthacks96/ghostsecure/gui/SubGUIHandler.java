@@ -23,8 +23,8 @@ import java.util.concurrent.TimeUnit;
 public class SubGUIHandler {
 
     // Resource paths
-    private static final String DARK_THEME_CSS = "/me/ghosthacks96/ghostsecure/dark-theme.css";
-    private static final String APP_ICON_PATH = "/me/ghosthacks96/ghostsecure/app_icon.png";
+    private static final String DARK_THEME_CSS = "/me/ghosthacks96/ghostsecure/css/dark-theme.css";
+    private static final String APP_ICON_PATH = "/me/ghosthacks96/ghostsecure/imgs/app_icon.png";
 
     // FXML files
     private static final String LOGIN_FXML = "login.fxml";

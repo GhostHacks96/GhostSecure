@@ -19,7 +19,7 @@ import java.util.Optional;
 public class SystemTrayIntegration {
 
     // Constants
-    private static final String TRAY_ICON_PATH = "/me/ghosthacks96/ghostsecure/tray_icon.png";
+    private static final String TRAY_ICON_PATH = "/me/ghosthacks96/ghostsecure/imgs/tray_icon.png";
     private static final String TRAY_TOOLTIP = "GhostSecure";
     private static final String MODE_LOCK = "lock";
     private static final String MODE_UNLOCK = "unlock";

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javax.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.ProgramManagementController" spacing="25">
+    <padding>
+        <Insets top="35" bottom="35" left="35" right="35" />
+    </padding>
+    <style>
+        -fx-background-color: #1e1e1ef2;
+        -fx-background-radius: 0 0 12 12;
+    </style>
+
+    <Label text="Protected Programs" textAlignment="CENTER">
+        <font>
+            <Font name="System Bold" size="22" />
+        </font>
+        <style>
+            -fx-text-fill: #00d4ff;
+            -fx-effect: dropshadow(gaussian, #00d4ff4d, 3, 0, 0, 0);
+        </style>
+    </Label>
+
+    <TableView fx:id="programTable" prefHeight="320">
+        <columns>
+            <TableColumn fx:id="programCheckBox" text="Select"/>
+            <TableColumn fx:id="programPathColumn" text="Program Name" prefWidth="350" />
+            <TableColumn fx:id="programActionColumn" text="Lock Status" prefWidth="170" />
+        </columns>
+    </TableView>
+
+    <HBox spacing="20" alignment="CENTER">
+        <Button fx:id="addProgramButton" onAction="#addProgram" text="ADD PROGRAM" prefWidth="140" prefHeight="45" styleClass="primary">
+            <font>
+                <Font name="System Bold" size="12" />
+            </font>
+        </Button>
+
+        <Button fx:id="removeProgramButton" onAction="#removeProgram" text="REMOVE" prefWidth="140" prefHeight="45" styleClass="danger">
+            <font>
+                <Font name="System Bold" size="12" />
+            </font>
+        </Button>
+
+        <Button fx:id="switchProgramLock" onAction="#swapPLockStatus" text="TOGGLE LOCK" prefWidth="140" prefHeight="45" styleClass="warning">
+            <font>
+                <Font name="System Bold" size="12" />
+            </font>
+        </Button>
+    </HBox>
+</VBox>
