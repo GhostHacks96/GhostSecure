@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure.utils.controllers;
+package me.ghosthacks96.ghostsecure.gui;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -9,8 +9,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import me.ghosthacks96.ghostsecure.Main;
-import me.ghosthacks96.ghostsecure.gui.LoginGUI;
-import me.ghosthacks96.ghostsecure.gui.SetPasswordGUI;
 import org.kordamp.bootstrapfx.BootstrapFX;
 
 import java.io.IOException;
@@ -18,7 +16,6 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static me.ghosthacks96.ghostsecure.utils.controllers.Config.passwordHash;
 
 /**
  * Handles creation and management of sub-GUI windows and dialogs
@@ -276,7 +273,15 @@ public class SubGUIHandler {
      * Check if login was successful by comparing password hashes
      */
     private boolean isLoginSuccessful() {
-        return passwordHash != null && passwordHash.equals(LoginGUI.enteredPasswordHash);
+        String storedHash = Main.config.getPasswordHash();
+        String enteredHash = LoginGUI.enteredPasswordHash;
+
+        if (storedHash == null || enteredHash == null) {
+            Main.logger.logWarning("Password hash verification failed - null value detected");
+            return false;
+        }
+
+        return storedHash.equals(enteredHash);
     }
 
     /**

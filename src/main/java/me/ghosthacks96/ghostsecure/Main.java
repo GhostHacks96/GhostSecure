@@ -11,10 +11,14 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import me.ghosthacks96.ghostsecure.gui.HomeGUI;
 import me.ghosthacks96.ghostsecure.gui.SplashGUI;
+import me.ghosthacks96.ghostsecure.gui.SubGUIHandler;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
-import me.ghosthacks96.ghostsecure.utils.RecoveryHandler;
-import me.ghosthacks96.ghostsecure.utils.Update;
-import me.ghosthacks96.ghostsecure.utils.controllers.*;
+import me.ghosthacks96.ghostsecure.utils.api_handlers.RecoveryHandler;
+import me.ghosthacks96.ghostsecure.utils.api_handlers.Update;
+import me.ghosthacks96.ghostsecure.utils.services.*;
+import me.ghosthacks96.ghostsecure.utils.debug.DebugConsole;
+import me.ghosthacks96.ghostsecure.utils.file_handlers.Config;
+import me.ghosthacks96.ghostsecure.utils.file_handlers.Logging;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
-import static me.ghosthacks96.ghostsecure.utils.EncryptionUtils.hashPassword;
+import static me.ghosthacks96.ghostsecure.utils.encryption.EncryptionUtils.hashPassword;
 
 /**
  * Main application class for GhostSecure
@@ -300,8 +304,8 @@ public class Main extends Application {
                         return false;
                     }
 
-                    Config.passwordHash = hashPassword(newPassword);
-                    config.getJsonConfig().addProperty("password", Config.passwordHash);
+                    config.setPasswordHash(hashPassword(newPassword));
+                    config.getJsonConfig().addProperty("password", config.getPasswordHash());
 
                     logger.logInfo("New password setup successfully.");
                     return true;
@@ -314,7 +318,7 @@ public class Main extends Application {
 
             private boolean handleExistingConfiguration() {
                 updateSplashMessage("Loading configuration...");
-                Config.loadConfig(false);
+                config.loadConfig(false);
 
 
                 Platform.runLater(() -> splashController.close());
@@ -412,7 +416,7 @@ public class Main extends Application {
     public void shutDownSystem(){
         SystemTrayIntegration.removeTrayIcon();
         ServiceController.stopBlockerDaemon();
-        Config.saveConfig();
+        config.saveConfig();
         DebugConsole.getInstance().killConsole();
         logger.onShutdown();
         Platform.exit();

@@ -7,7 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
-import me.ghosthacks96.ghostsecure.utils.EncryptionUtils;
+import me.ghosthacks96.ghostsecure.utils.encryption.EncryptionUtils;
 
 /**
  * Controller for the login screen

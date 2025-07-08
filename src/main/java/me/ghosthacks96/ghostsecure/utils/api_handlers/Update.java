@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure.utils;
+package me.ghosthacks96.ghostsecure.utils.api_handlers;
 
 import java.io.*;
 import java.net.HttpURLConnection;

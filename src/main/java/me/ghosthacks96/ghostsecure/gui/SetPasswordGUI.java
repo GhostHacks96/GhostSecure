@@ -41,6 +41,11 @@ public class SetPasswordGUI {
             return;
         }
 
+        if( password.length() < 8) {
+            errorLabel.setText("Password must be at least 8 characters long.");
+            return;
+        }
+
         enteredPassword = password; // Save the password
         passwordSet = true; // Mark as successful
 

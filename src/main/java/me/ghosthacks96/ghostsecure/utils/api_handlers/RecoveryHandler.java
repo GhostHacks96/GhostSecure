@@ -1,11 +1,12 @@
-package me.ghosthacks96.ghostsecure.utils;
+package me.ghosthacks96.ghostsecure.utils.api_handlers;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.ghosthacks96.ghostsecure.Main;
-import me.ghosthacks96.ghostsecure.utils.controllers.Config;
-import me.ghosthacks96.ghostsecure.utils.controllers.Logging;
-import me.ghosthacks96.ghostsecure.utils.controllers.SubGUIHandler;
+import me.ghosthacks96.ghostsecure.utils.encryption.EncryptionUtils;
+import me.ghosthacks96.ghostsecure.utils.file_handlers.Config;
+import me.ghosthacks96.ghostsecure.utils.file_handlers.Logging;
+import me.ghosthacks96.ghostsecure.gui.SubGUIHandler;
 
 import java.io.*;
 import java.net.HttpURLConnection;

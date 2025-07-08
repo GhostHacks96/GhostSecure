@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure.utils.controllers;
+package me.ghosthacks96.ghostsecure.utils.debug;
 
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -14,9 +14,6 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import me.ghosthacks96.ghostsecure.Main;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.Objects;
 
 public class DebugConsole {

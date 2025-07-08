@@ -1,6 +1,7 @@
-package me.ghosthacks96.ghostsecure.utils.controllers;
+package me.ghosthacks96.ghostsecure.utils.file_handlers;
 
 import me.ghosthacks96.ghostsecure.Main;
+import me.ghosthacks96.ghostsecure.utils.debug.DebugConsole;
 
 import java.io.*;
 import java.nio.file.*;

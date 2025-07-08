@@ -16,9 +16,9 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
-import me.ghosthacks96.ghostsecure.utils.EncryptionUtils;
-import me.ghosthacks96.ghostsecure.utils.controllers.Config;
-import me.ghosthacks96.ghostsecure.utils.controllers.ServiceController;
+import me.ghosthacks96.ghostsecure.utils.encryption.EncryptionUtils;
+import me.ghosthacks96.ghostsecure.utils.file_handlers.Config;
+import me.ghosthacks96.ghostsecure.utils.services.ServiceController;
 
 import java.awt.*;
 import java.io.File;

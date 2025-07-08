@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure.utils;
+package me.ghosthacks96.ghostsecure.utils.encryption;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;

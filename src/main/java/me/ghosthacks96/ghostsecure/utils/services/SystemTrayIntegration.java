@@ -1,9 +1,11 @@
-package me.ghosthacks96.ghostsecure.utils.controllers;
+package me.ghosthacks96.ghostsecure.utils.services;
 
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.gui.HomeGUI;
+import me.ghosthacks96.ghostsecure.utils.file_handlers.Config;
+import me.ghosthacks96.ghostsecure.utils.file_handlers.Logging;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
