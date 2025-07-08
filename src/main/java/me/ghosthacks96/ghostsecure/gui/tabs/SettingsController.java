@@ -24,6 +24,7 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 
+import static me.ghosthacks96.ghostsecure.Main.config;
 import static me.ghosthacks96.ghostsecure.Main.logger;
 
 public class SettingsController {
@@ -76,8 +77,8 @@ public class SettingsController {
     }
 
     private boolean getDebugModeFromConfig() {
-        if (Main.config.getJsonConfig().has("debugMode")) {
-            return Main.config.getJsonConfig().get("debugMode").getAsBoolean();
+        if (config.getJsonConfig().has("debugMode")) {
+            return config.getJsonConfig().get("debugMode").getAsBoolean();
         }
         return false;
     }
@@ -165,10 +166,10 @@ public class SettingsController {
 
     private void updatePassword(String newPassword) {
         String newPasswordHash = EncryptionUtils.hashPassword(newPassword);
-        Main.config.setPasswordHash(newPasswordHash);
-        Main.config.getJsonConfig().remove("password");
-        Main.config.getJsonConfig().addProperty("password", newPasswordHash);
-        Main.config.saveConfig();
+        config.setPasswordHash(newPasswordHash);
+        config.getJsonConfig().remove("password");
+        config.getJsonConfig().addProperty("password", newPasswordHash);
+        config.saveConfig();
     }
 
     private void clearPasswordFields() {
@@ -255,7 +256,7 @@ public class SettingsController {
         }
 
         // Get current config as JsonObject
-        JsonObject configCopy = Main.config.getJsonConfig();
+        JsonObject configCopy = config.getJsonConfig();
 
         // Create export structure with locked items
         JsonObject exportData = new JsonObject();
@@ -265,7 +266,7 @@ public class SettingsController {
         JsonArray programsArray = new JsonArray();
         JsonArray foldersArray = new JsonArray();
 
-        for (LockedItem item : Main.lockedItems) {
+        for (LockedItem item : config.lockedItems) {
             String formattedPath = item.getPath() + "[::]" + (item.isLocked() ? "locked" : "unlocked");
 
             if (item.getPath().endsWith(".exe")) {
@@ -325,13 +326,13 @@ public class SettingsController {
         mergeImportedConfig(importedData);
 
         // Save the updated configuration
-        Main.config.saveConfig();
+        config.saveConfig();
 
     }
 
     private void mergeImportedConfig(JsonObject importedData) {
         // Get current config
-        JsonObject currentConfig = Main.config.getJsonConfig();
+        JsonObject currentConfig = config.getJsonConfig();
 
         // Import programs and folders
         JsonArray importedPrograms = getJsonArrayOrEmpty(importedData, "programs");
@@ -360,7 +361,7 @@ public class SettingsController {
                 // Parse the imported item and add to main list
                 LockedItem item = parseImportedItem(programEntry);
                 if (item != null) {
-                    Main.lockedItems.add(item);
+                    config.lockedItems.add(item);
                 }
             }
         }
@@ -372,7 +373,7 @@ public class SettingsController {
                 // Parse the imported item and add to main list
                 LockedItem item = parseImportedItem(folderEntry);
                 if (item != null) {
-                    Main.lockedItems.add(item);
+                    config.lockedItems.add(item);
                 }
             }
         }
@@ -477,7 +478,7 @@ public class SettingsController {
         public boolean isCurrentPasswordValid() {
             String currentPasswordHash = EncryptionUtils.hashPassword(currentPassword);
             assert currentPasswordHash != null;
-            return currentPasswordHash.equals(Main.config.getPasswordHash());
+            return currentPasswordHash.equals(config.getPasswordHash());
         }
 
         public boolean doNewPasswordsMatch() {

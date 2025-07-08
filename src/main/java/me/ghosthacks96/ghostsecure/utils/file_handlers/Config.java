@@ -45,7 +45,7 @@ public class Config {
     private final Gson gson;
     private final Logging logger;
     private final ReadWriteLock configLock;
-    private final List<LockedItem> lockedItems;
+    public final List<LockedItem> lockedItems;
 
     private JsonObject config;
     private String passwordHash;
@@ -316,9 +316,11 @@ public class Config {
      */
     private void ensureConfigArraysExist() {
         if (!config.has(PROGRAMS_ARRAY)) {
+            logger.logDebug("Programs array not found in config. Creating...");
             config.add(PROGRAMS_ARRAY, new JsonArray());
         }
         if (!config.has(FOLDERS_ARRAY)) {
+            logger.logDebug("Folders array not found in config. Creating...");
             config.add(FOLDERS_ARRAY, new JsonArray());
         }
     }
@@ -332,7 +334,7 @@ public class Config {
 
         for (LockedItem item : lockedItems) {
             String formattedPath = formatItemForStorage(item);
-
+            logger.logDebug("Populating config arrays with item: " + formattedPath);
             if (isExecutableFile(item.getName())) {
                 programsArray.add(formattedPath);
             } else {

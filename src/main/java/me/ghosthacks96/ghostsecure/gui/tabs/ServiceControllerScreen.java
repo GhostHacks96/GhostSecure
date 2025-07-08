@@ -21,6 +21,13 @@ public class ServiceControllerScreen {
     // ===============================
 
     @FXML
+    public void initialize() {
+        logger.logInfo("Initializing ServiceControllerScreen.");
+        updateServiceStatus();
+        logger.logInfo("ServiceControllerScreen initialized.");
+    }
+
+    @FXML
     public void startService() {
         logger.logInfo("Starting locking service.");
 

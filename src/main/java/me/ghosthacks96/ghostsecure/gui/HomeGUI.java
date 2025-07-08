@@ -6,6 +6,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import me.ghosthacks96.ghostsecure.Main;
@@ -17,6 +18,10 @@ import java.util.ResourceBundle;
 
 public class HomeGUI implements Initializable {
 
+    @FXML
+    public Label appVersionLabel;
+    @FXML
+    public ScrollPane contentScrollPane;
     @FXML
     private Label lockStatus;
 
@@ -55,6 +60,7 @@ public class HomeGUI implements Initializable {
 
         // Update lock status
         updateLockStatus();
+        appVersionLabel.setText("GhostSecure v-" + Main.VERSION);
     }
 
     private void setupNavigation() {
@@ -97,6 +103,8 @@ public class HomeGUI implements Initializable {
 
             // Clear current content and add new content
             contentArea.getChildren().clear();
+            contentScrollPane.setVvalue(0);
+            contentScrollPane.setHvalue(0);
             contentArea.getChildren().add(content);
 
         } catch (IOException e) {
@@ -118,18 +126,16 @@ public class HomeGUI implements Initializable {
     }
 
     public void updateLockStatus() {
-        // This would connect to your actual service to check lock status
-        // For now, just showing example
         boolean isLocked = checkLockStatus(); // Implement this method
 
         if (isLocked) {
             lockStatus.setText("🔒 LOCKED");
-            lockStatus.getStyleClass().removeAll("status-label", "error-label");
-            lockStatus.getStyleClass().add("status-label");
+            lockStatus.getStyleClass().clear();
+            lockStatus.getStyleClass().addAll("status-label", "locked");
         } else {
             lockStatus.setText("🔓 UNLOCKED");
-            lockStatus.getStyleClass().removeAll("status-label", "error-label");
-            lockStatus.getStyleClass().add("error-label");
+            lockStatus.getStyleClass().clear();
+            lockStatus.getStyleClass().addAll("status-label", "unlocked");
         }
     }
 

@@ -38,12 +38,10 @@ import static me.ghosthacks96.ghostsecure.utils.encryption.EncryptionUtils.hashP
 public class Main extends Application {
 
     // Application constants
-    private static final String VERSION = "2.3.6";
+    public static final String VERSION = "2.3.6";
     public static final String APP_DATA_PATH = System.getenv("APPDATA") + "/ghosthacks96/GhostSecure/";
     private static final String DEBUG_FILE_PATH = APP_DATA_PATH + "debug.txt";
 
-    // Static application components
-    public static ArrayList<LockedItem> lockedItems = new ArrayList<>();
     public static Config config;
     public static Logging logger;
     public static SubGUIHandler sgh = new SubGUIHandler();
@@ -78,7 +76,7 @@ public class Main extends Application {
      * Check if debug mode should be enabled
      */
     private static void checkDebugMode() {
-        DEBUG_MODE = new File(DEBUG_FILE_PATH).exists();
+        DEBUG_MODE = true;//new File(DEBUG_FILE_PATH).exists();
         logger.logInfo("Debug mode is " + (DEBUG_MODE ? "enabled" : "disabled"));
     }
 
@@ -418,7 +416,7 @@ public class Main extends Application {
         SystemTrayIntegration.removeTrayIcon();
         ServiceController.stopBlockerDaemon();
         config.saveConfig();
-        DebugConsole.getInstance().killConsole();
+        if(DEBUG_MODE) DebugConsole.getInstance().killConsole();
         logger.onShutdown();
         Platform.exit();
     }

@@ -5,7 +5,8 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.HomeGUI">
+<BorderPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.HomeGUI"
+            prefWidth="750" prefHeight="400" styleClass="main-border-pane">
     <style>
         -fx-background-color: linear-gradient(to bottom right, #0a0a0a 0%, #1a1a1a 100%);
     </style>
@@ -51,9 +52,6 @@
                 </Label>
 
                 <Label fx:id="lockStatus" text="🔒 LOCKED" textAlignment="CENTER" styleClass="status-label">
-                    <font>
-                        <Font name="System Bold" size="14" />
-                    </font>
                 </Label>
             </HBox>
         </VBox>
@@ -61,50 +59,50 @@
 
     <!-- Sidebar Navigation -->
     <left>
-        <VBox fx:id="sidebarNav" prefWidth="250" spacing="8" styleClass="sidebar">
+        <VBox fx:id="sidebarNav" prefWidth="200" spacing="6" styleClass="sidebar">
             <padding>
-                <Insets top="20" bottom="20" left="15" right="15" />
+                <Insets top="20" bottom="20" left="12" right="12" />
             </padding>
 
             <!-- Navigation Title -->
             <Label text="Navigation" textAlignment="CENTER">
                 <font>
-                    <Font name="System Bold" size="16" />
+                    <Font name="System Bold" size="14" />
                 </font>
                 <style>
                     -fx-text-fill: #00d4ff;
-                    -fx-padding: 0 0 15 0;
+                    -fx-padding: 0 0 12 0;
                 </style>
             </Label>
 
             <!-- Navigation Buttons -->
-            <Button fx:id="serviceControlNav" text="🔧 Service Control" prefWidth="220" prefHeight="50" styleClass="nav-button">
+            <Button fx:id="serviceControlNav" text="🔧 Service Control" prefWidth="200" prefHeight="20" styleClass="nav-button">
                 <font>
-                    <Font name="System Bold" size="14" />
+                    <Font name="System Bold" size="10" />
                 </font>
             </Button>
 
-            <Button fx:id="folderManagementNav" text="📁 Folder Management" prefWidth="220" prefHeight="50" styleClass="nav-button">
+            <Button fx:id="folderManagementNav" text="📁 Folders" prefWidth="200" prefHeight="20" styleClass="nav-button">
                 <font>
-                    <Font name="System Bold" size="14" />
+                    <Font name="System Bold" size="10" />
                 </font>
             </Button>
 
-            <Button fx:id="programManagementNav" text="💻 Program Management" prefWidth="220" prefHeight="50" styleClass="nav-button">
+            <Button fx:id="programManagementNav" text="💻 Programs" prefWidth="200" prefHeight="20" styleClass="nav-button">
                 <font>
-                    <Font name="System Bold" size="14" />
+                    <Font name="System Bold" size="10" />
                 </font>
             </Button>
 
-            <Button fx:id="settingsNav" text="⚙ Settings" prefWidth="220" prefHeight="50" styleClass="nav-button">
+            <Button fx:id="settingsNav" text="⚙ Settings" prefWidth="200" prefHeight="20" styleClass="nav-button">
                 <font>
-                    <Font name="System Bold" size="14" />
+                    <Font name="System Bold" size="10" />
                 </font>
             </Button>
 
-            <Button fx:id="aboutNav" text="ℹ About" prefWidth="220" prefHeight="50" styleClass="nav-button">
+            <Button fx:id="aboutNav" text="ℹ About" prefWidth="200" prefHeight="20" styleClass="nav-button">
                 <font>
-                    <Font name="System Bold" size="14" />
+                    <Font name="System Bold" size="10" />
                 </font>
             </Button>
 
@@ -112,7 +110,7 @@
             <Region VBox.vgrow="ALWAYS" />
 
             <!-- Version Info -->
-            <Label text="GhostSecure v2.2.1" textAlignment="CENTER">
+            <Label fx:id="appVersionLabel" textAlignment="CENTER">
                 <font>
                     <Font size="12" />
                 </font>
@@ -124,20 +122,28 @@
         </VBox>
     </left>
 
-    <!-- Content Area -->
+    <!-- Content Area with ScrollPane for dynamic scaling -->
     <center>
-        <StackPane fx:id="contentArea" styleClass="content-area">
-            <!-- Loading content will be replaced by dynamically loaded FXML -->
-            <VBox alignment="CENTER" spacing="20">
-                <Label text="Loading..." textAlignment="CENTER">
-                    <font>
-                        <Font name="System Bold" size="18" />
-                    </font>
-                    <style>
-                        -fx-text-fill: #00d4ff;
-                    </style>
-                </Label>
-            </VBox>
-        </StackPane>
+        <ScrollPane fx:id="contentScrollPane" fitToWidth="true" fitToHeight="true"
+                    hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED" styleClass="content-scroll-pane">
+            <style>
+                -fx-background: transparent;
+                -fx-background-color: transparent;
+            </style>
+
+            <StackPane fx:id="contentArea" styleClass="content-area">
+                <!-- Loading content will be replaced by dynamically loaded FXML -->
+                <VBox alignment="CENTER" spacing="20">
+                    <Label text="Loading..." textAlignment="CENTER">
+                        <font>
+                            <Font name="System Bold" size="18" />
+                        </font>
+                        <style>
+                            -fx-text-fill: #00d4ff;
+                        </style>
+                    </Label>
+                </VBox>
+            </StackPane>
+        </ScrollPane>
     </center>
 </BorderPane>

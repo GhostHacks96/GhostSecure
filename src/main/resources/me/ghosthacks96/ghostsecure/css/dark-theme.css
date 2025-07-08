@@ -182,16 +182,41 @@
     -fx-background-color: #ffffff14;
 }
 
-/* Status Label Styling */
 .status-label {
-    -fx-background-color: #00d4ff26;
-    -fx-background-radius: 15;
-    -fx-padding: 6 14;
-    -fx-text-fill: #00d4ff;
+    -fx-background-radius: 8;
+    -fx-padding: 12 16;
     -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 2, 0, 0, 1);
+    /* Removed fixed width constraints to match error label */
 }
 
-/* Error Label Styling */
+/* Locked Status - Cyan theme */
+.status-label.locked {
+    -fx-background-color: #00d4ff26;
+    -fx-text-fill: #00d4ff;
+    -fx-border-color: #00d4ff4d;
+}
+
+/* Unlocked Status - Red theme */
+.status-label.unlocked {
+    -fx-background-color: #ff475726;
+    -fx-text-fill: #ff4757;
+    -fx-border-color: #ff47574d;
+}
+
+/* Hover effects for interactive feel */
+.status-label:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 3, 0, 0, 1);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+/* Error Label Styling - for reference */
 .error-label {
     -fx-text-fill: #ff4757;
     -fx-background-color: #ff475726;
@@ -804,4 +829,140 @@
 
 .hyperlink:visited {
     -fx-text-fill: #00d4ff;
+}
+/* Card-based Item Display Styling */
+.locked-item-card {
+    -fx-background-color: #ffffff05;
+    -fx-border-color: #00d4ff33;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, #0000003d, 3, 0, 0, 1);
+    -fx-cursor: hand;
+}
+
+.locked-item-card:hover {
+    -fx-background-color: #ffffff0a;
+    -fx-border-color: #00d4ff66;
+    -fx-scale-x: 1.01;
+    -fx-scale-y: 1.01;
+    -fx-effect: dropshadow(gaussian, #00d4ff33, 5, 0, 0, 2);
+}
+
+.locked-item-card .check-box {
+    -fx-scale-x: 1.2;
+    -fx-scale-y: 1.2;
+}
+
+.locked-item-card .check-box .box {
+    -fx-background-color: #ffffff0d;
+    -fx-border-color: #00d4ff4d;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.locked-item-card .check-box:selected .box {
+    -fx-background-color: #00d4ff;
+    -fx-border-color: #00d4ff;
+}
+
+.locked-item-card .check-box:selected .mark {
+    -fx-background-color: #000000;
+}
+
+.locked-item-card .check-box:hover .box {
+    -fx-border-color: #00d4ff;
+    -fx-background-color: #ffffff14;
+}
+
+/* Enhanced Status Label */
+.status-label {
+    -fx-background-color: #00d4ff1a;
+    -fx-background-radius: 15;
+    -fx-padding: 8 16;
+    -fx-text-fill: #00d4ff;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-border-color: #00d4ff4d;
+    -fx-border-width: 1;
+    -fx-border-radius: 15;
+}
+
+/* Icon styling for cards */
+.item-icon {
+    -fx-font-size: 24px;
+    -fx-effect: dropshadow(gaussian, #00d4ff4d, 2, 0, 0, 0);
+}
+
+/* Compact button styling for cards */
+.compact-button {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+/* Empty state styling */
+.empty-state-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #b0b0b0;
+    -fx-font-style: italic;
+    -fx-padding: 40 20;
+    -fx-alignment: center;
+}
+
+/* Search/Filter box styling */
+.search-field {
+    -fx-background-color: #ffffff0d;
+    -fx-background-radius: 20;
+    -fx-border-color: #00d4ff4d;
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #808080;
+    -fx-padding: 8 16;
+    -fx-font-size: 12px;
+}
+
+.search-field:focused {
+    -fx-border-color: #00d4ff;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, #00d4ff4d, 3, 0, 0, 0);
+    -fx-background-color: #ffffff14;
+}
+
+/* Animated transitions for cards */
+.card-transition {
+    -fx-transition: all 0.2s ease-in-out;
+}
+
+/* Grid layout alternative */
+.grid-container {
+    -fx-background-color: transparent;
+    -fx-padding: 10;
+    -fx-hgap: 10;
+    -fx-vgap: 10;
+}
+
+.grid-item-card {
+    -fx-background-color: #ffffff08;
+    -fx-border-color: #00d4ff33;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 15;
+    -fx-min-width: 250;
+    -fx-min-height: 80;
+    -fx-max-width: 300;
+    -fx-effect: dropshadow(gaussian, #0000003d, 3, 0, 0, 1);
+}
+
+.grid-item-card:hover {
+    -fx-background-color: #ffffff0f;
+    -fx-border-color: #00d4ff66;
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+    -fx-effect: dropshadow(gaussian, #00d4ff33, 5, 0, 0, 2);
 }
