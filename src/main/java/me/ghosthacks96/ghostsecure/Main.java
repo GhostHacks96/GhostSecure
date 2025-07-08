@@ -10,7 +10,7 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import me.ghosthacks96.ghostsecure.gui.HomeGUI;
-import me.ghosthacks96.ghostsecure.gui.SplashGUI;
+import me.ghosthacks96.ghostsecure.gui.extras.SplashGUI;
 import me.ghosthacks96.ghostsecure.gui.SubGUIHandler;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
 import me.ghosthacks96.ghostsecure.utils.api_handlers.RecoveryHandler;

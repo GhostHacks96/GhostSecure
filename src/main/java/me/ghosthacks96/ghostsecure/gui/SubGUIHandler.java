@@ -9,6 +9,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import me.ghosthacks96.ghostsecure.Main;
+import me.ghosthacks96.ghostsecure.gui.auth.LoginGUI;
+import me.ghosthacks96.ghostsecure.gui.auth.SetPasswordGUI;
 import org.kordamp.bootstrapfx.BootstrapFX;
 
 import java.io.IOException;

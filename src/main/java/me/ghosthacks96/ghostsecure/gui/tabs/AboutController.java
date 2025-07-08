@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure.gui;
+package me.ghosthacks96.ghostsecure.gui.tabs;
 
 import javafx.fxml.FXML;
 import me.ghosthacks96.ghostsecure.Main;

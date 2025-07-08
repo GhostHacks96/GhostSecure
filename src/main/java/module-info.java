@@ -17,4 +17,10 @@ module ghostsecure {
     exports me.ghosthacks96.ghostsecure.utils.file_handlers;
     exports me.ghosthacks96.ghostsecure.utils.api_handlers;
     exports me.ghosthacks96.ghostsecure.utils.encryption;
+    exports me.ghosthacks96.ghostsecure.gui.tabs;
+    opens me.ghosthacks96.ghostsecure.gui.tabs to com.google.gson, javafx.fxml;
+    exports me.ghosthacks96.ghostsecure.gui.auth;
+    opens me.ghosthacks96.ghostsecure.gui.auth to com.google.gson, javafx.fxml;
+    exports me.ghosthacks96.ghostsecure.gui.extras;
+    opens me.ghosthacks96.ghostsecure.gui.extras to com.google.gson, javafx.fxml;
 }

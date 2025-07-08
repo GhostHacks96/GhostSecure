@@ -1,9 +1,8 @@
-package me.ghosthacks96.ghostsecure.gui;
+package me.ghosthacks96.ghostsecure.gui.tabs;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.utils.services.ServiceController;
 

@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure.gui;
+package me.ghosthacks96.ghostsecure.gui.tabs;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;

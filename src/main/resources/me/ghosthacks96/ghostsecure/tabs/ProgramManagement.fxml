@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<VBox xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javax.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.ProgramManagementController" spacing="25">
+<VBox xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javax.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.tabs.ProgramManagementController" spacing="25">
     <padding>
         <Insets top="35" bottom="35" left="35" right="35" />
     </padding>

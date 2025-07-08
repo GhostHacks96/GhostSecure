@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure.gui;
+package me.ghosthacks96.ghostsecure.gui.extras;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -6,7 +6,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
-import me.ghosthacks96.ghostsecure.Main;
 
 /**
  * Controller for the splash screen

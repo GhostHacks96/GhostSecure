@@ -1,4 +1,4 @@
-package me.ghosthacks96.ghostsecure.gui;
+package me.ghosthacks96.ghostsecure.gui.auth;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
