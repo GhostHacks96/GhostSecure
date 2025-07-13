@@ -61,6 +61,15 @@ public class HomeGUI implements Initializable {
         // Update lock status
         updateLockStatus();
         appVersionLabel.setText("GhostSecure v-" + Main.VERSION);
+        lockStatus.setOnMouseClicked(e -> {
+            // Toggle lock status on click
+            if (ServiceController.isServiceRunning()) {
+                ServiceController.stopBlockerDaemon();
+            } else {
+                ServiceController.startBlockerDaemon();
+            }
+            updateLockStatus(); // Refresh lock status display
+        });
     }
 
     private void setupNavigation() {

@@ -9,15 +9,15 @@ import javafx.beans.property.StringProperty;
 import java.util.Objects;
 
 /**
- * Represents a locked item with path, name, and lock state properties.
- * This class provides JavaFX property bindings for UI components.
+ * Base class for locked items with path, name, and lock state properties.
+ * This abstract class provides common functionality for JavaFX property bindings.
  */
-public class LockedItem {
+public abstract class LockedItem {
 
-    private final StringProperty path;
-    private final StringProperty name;
-    private final BooleanProperty isLocked;
-    private final BooleanProperty selected;
+    protected final StringProperty path;
+    protected final StringProperty name;
+    protected final BooleanProperty isLocked;
+    protected final BooleanProperty selected;
 
     /**
      * Creates a new LockedItem with the specified properties.
@@ -27,7 +27,7 @@ public class LockedItem {
      * @param isLocked the initial lock state
      * @throws IllegalArgumentException if path or name is null or empty
      */
-    public LockedItem(String path, String name, boolean isLocked) {
+    protected LockedItem(String path, String name, boolean isLocked) {
         validateInput(path, "Path");
         validateInput(name, "Name");
 
@@ -44,7 +44,7 @@ public class LockedItem {
      * @param name the display name (cannot be null or empty)
      * @throws IllegalArgumentException if path or name is null or empty
      */
-    public LockedItem(String path, String name) {
+    protected LockedItem(String path, String name) {
         this(path, name, false);
     }
 
@@ -55,7 +55,7 @@ public class LockedItem {
      * @param fieldName the name of the field for error messages
      * @throws IllegalArgumentException if input is null or empty
      */
-    private void validateInput(String input, String fieldName) {
+    protected void validateInput(String input, String fieldName) {
         if (input == null || input.trim().isEmpty()) {
             throw new IllegalArgumentException(fieldName + " cannot be null or empty");
         }
@@ -130,15 +130,18 @@ public class LockedItem {
     }
 
     /**
+     * Returns the type of this locked item (for identification purposes).
+     *
+     * @return the item type as a string
+     */
+    public abstract String getItemType();
+
+    /**
      * Returns a copy of this LockedItem with the same properties.
      *
      * @return a new LockedItem instance with copied properties
      */
-    public LockedItem copy() {
-        LockedItem copy = new LockedItem(getPath(), getName(), isLocked());
-        copy.setSelected(isSelected());
-        return copy;
-    }
+    public abstract LockedItem copy();
 
     @Override
     public boolean equals(Object obj) {
@@ -159,7 +162,7 @@ public class LockedItem {
 
     @Override
     public String toString() {
-        return String.format("LockedItem{path='%s', name='%s', locked=%s, selected=%s}",
-                getPath(), getName(), isLocked(), isSelected());
+        return String.format("%s{path='%s', name='%s', locked=%s, selected=%s}",
+                getClass().getSimpleName(), getPath(), getName(), isLocked(), isSelected());
     }
 }

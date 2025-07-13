@@ -104,6 +104,39 @@
         </style>
     </Separator>
 
+    <!-- Two-Factor Authentication Settings Section -->
+    <VBox spacing="20" alignment="CENTER">
+        <Label text="Two-Factor Authentication Settings" textAlignment="CENTER">
+            <font>
+                <Font name="System Bold" size="18" />
+            </font>
+            <style>
+                -fx-text-fill: #ffffff;
+            </style>
+        </Label>
+            <HBox spacing="15" alignment="CENTER">
+                <CheckBox fx:id="twoFactorAuthCheckBox" onAction="#toggleTwoFactorAuth">
+                    <style>
+                        -fx-text-fill: #ffffff;
+                    </style>
+                </CheckBox>
+                <Label text="Enable Two-Factor Authentication" textAlignment="CENTER">
+                    <font>
+                        <Font size="14" />
+                    </font>
+                    <style>
+                        -fx-text-fill: #ffffff;
+                    </style>
+                </Label>
+            </HBox>
+    </VBox>
+
+    <Separator>
+        <style>
+            -fx-background-color: #00d4ff40;
+        </style>
+    </Separator>
+
     <!-- Debug Settings Section -->
     <VBox spacing="20" alignment="CENTER">
         <Label text="Debug Settings" textAlignment="CENTER">
@@ -142,6 +175,57 @@
             </Label>
 
             <Label fx:id="debugStatus" text="" textAlignment="CENTER" maxWidth="350" wrapText="true">
+                <font>
+                    <Font size="12" />
+                </font>
+            </Label>
+        </VBox>
+    </VBox>
+
+    <Separator>
+        <style>
+            -fx-background-color: #00d4ff40;
+        </style>
+    </Separator>
+
+    <!-- Auto-Start Settings Section -->
+    <VBox spacing="20" alignment="CENTER">
+        <Label text="Auto-Start Settings" textAlignment="CENTER">
+            <font>
+                <Font name="System Bold" size="18" />
+            </font>
+            <style>
+                -fx-text-fill: #ffffff;
+            </style>
+        </Label>
+
+        <VBox spacing="15" alignment="CENTER" maxWidth="350">
+            <HBox spacing="15" alignment="CENTER">
+                <CheckBox fx:id="autoStartCheckBox" onAction="#toggleAutoStart">
+                    <style>
+                        -fx-text-fill: #ffffff;
+                    </style>
+                </CheckBox>
+                <Label text="Enable Auto-Start" textAlignment="CENTER">
+                    <font>
+                        <Font size="14" />
+                    </font>
+                    <style>
+                        -fx-text-fill: #ffffff;
+                    </style>
+                </Label>
+            </HBox>
+
+            <Label text="Automatically start the application when your computer boots up" textAlignment="CENTER" maxWidth="300" wrapText="true">
+                <font>
+                    <Font size="12" />
+                </font>
+                <style>
+                    -fx-text-fill: #b0b0b0;
+                </style>
+            </Label>
+
+            <Label fx:id="autoStartStatus" text="" textAlignment="CENTER" maxWidth="350" wrapText="true">
                 <font>
                     <Font size="12" />
                 </font>

@@ -7,13 +7,14 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import me.ghosthacks96.ghostsecure.Main;
-import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
 import me.ghosthacks96.ghostsecure.utils.encryption.EncryptionUtils;
 
 import java.io.File;
@@ -21,11 +22,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-import static me.ghosthacks96.ghostsecure.Main.config;
-import static me.ghosthacks96.ghostsecure.Main.logger;
+import static me.ghosthacks96.ghostsecure.Main.*;
 
 public class SettingsController {
     // Constants
@@ -33,6 +35,7 @@ public class SettingsController {
     private static final String EXPORT_SEPARATOR = "!!_!!";
     private static final String STATIC_BACKUP_PASSWORD = "ThisIsBuLLShit";
     private static final int MIN_PASSWORD_LENGTH = 4;
+    public CheckBox twoFactorAuthCheckBox;
     // UI Components - Settings
     @FXML private PasswordField currentPasswordField;
     @FXML private PasswordField newPasswordField;
@@ -43,6 +46,88 @@ public class SettingsController {
     @FXML private CheckBox debugModeCheckBox;
     @FXML private Label debugStatus;
 
+    // UI Components - Auto-start
+    @FXML private CheckBox autoStartCheckBox;
+    @FXML private Label autoStartStatus;
+
+
+
+    // ===============================
+    // AUTO-START METHODS
+    // ===============================
+
+    @FXML
+    public void initialize() {
+        initializeDebugMode();
+        initializeAutoStart();
+        if(Main.use2FA){
+            Main.use2FA = false;
+            Main.logger.logInfo("Two-Factor Authentication disabled.");
+            twoFactorAuthCheckBox.setSelected(false);
+        } else {
+            Main.use2FA = true;
+            Main.logger.logInfo("Two-Factor Authentication enabled.");
+            twoFactorAuthCheckBox.setSelected(true);
+        }
+    }
+
+    private void initializeAutoStart() {
+        try {
+            boolean autoStartEnabled = getAutoStartSetting();
+            autoStartCheckBox.setSelected(autoStartEnabled);
+            updateAutoStartStatus(autoStartEnabled);
+            logger.logInfo("Auto-start initialized: " + autoStartEnabled);
+        } catch (Exception e) {
+            logger.logError("Error initializing auto-start: " + e.getMessage());
+            autoStartCheckBox.setSelected(false);
+            updateAutoStartStatus(false);
+        }
+    }
+
+    @FXML
+    private void toggleAutoStart() {
+        boolean autoStartEnabled = autoStartCheckBox.isSelected();
+        logger.logInfo("Toggling auto-start to: " + autoStartEnabled);
+
+        try {
+            // Update in systemConfigStorage (unencrypted storage for system settings)
+            systemConfigStorage.put("auto_start", autoStartEnabled);
+            systemConfigStorage.saveData();
+
+            updateAutoStartStatus(autoStartEnabled);
+            logger.logInfo("Auto-start " + (autoStartEnabled ? "enabled" : "disabled") + " successfully.");
+        } catch (Exception e) {
+            logger.logError("Error toggling auto-start: " + e.getMessage());
+            showAutoStartError("Error updating auto-start: " + e.getMessage());
+        }
+    }
+
+    private boolean getAutoStartSetting() {
+        // First check if auto-start exists in systemConfigStorage (after migration)
+        if (systemConfigStorage.containsKey("auto_start")) {
+            return systemConfigStorage.get("auto_start", false);
+        }
+        return false;
+    }
+
+    private void updateAutoStartStatus(boolean autoStartEnabled) {
+        autoStartStatus.getStyleClass().removeAll("error-label", "success-label");
+
+        if (autoStartEnabled) {
+            autoStartStatus.setText("Auto-start is ENABLED - Application will start minimized to system tray on boot");
+            autoStartStatus.setTextFill(javafx.scene.paint.Color.GREEN);
+            autoStartStatus.getStyleClass().add("success-label");
+        } else {
+            autoStartStatus.setText("Auto-start is DISABLED - Login required on startup");
+            autoStartStatus.setTextFill(javafx.scene.paint.Color.GRAY);
+        }
+    }
+
+    private void showAutoStartError(String message) {
+        autoStartStatus.setText(message);
+        autoStartStatus.getStyleClass().removeAll("success-label");
+        autoStartStatus.getStyleClass().add("error-label");
+    }
 
     // ===============================
     // DEBUG MODE METHODS
@@ -67,7 +152,13 @@ public class SettingsController {
         logger.logInfo("Toggling debug mode to: " + debugEnabled);
 
         try {
+            // Update debug mode in the application
             Main.shiftDebug(debugEnabled);
+
+            // Save to systemConfigStorage
+            systemConfigStorage.put("debug_mode", debugEnabled);
+            systemConfigStorage.saveData();
+
             updateDebugStatus(debugEnabled);
             logger.logInfo("Debug mode " + (debugEnabled ? "enabled" : "disabled") + " successfully.");
         } catch (Exception e) {
@@ -77,9 +168,11 @@ public class SettingsController {
     }
 
     private boolean getDebugModeFromConfig() {
-        if (config.getJsonConfig().has("debugMode")) {
-            return config.getJsonConfig().get("debugMode").getAsBoolean();
-        }
+        // First check if debug mode exists in systemConfigStorage
+        if (systemConfigStorage.containsKey("debug_mode")) {
+            return systemConfigStorage.get("debug_mode", false);
+        } 
+        // If not in systemConfigStorage, check in config (before migration)
         return false;
     }
 
@@ -166,10 +259,8 @@ public class SettingsController {
 
     private void updatePassword(String newPassword) {
         String newPasswordHash = EncryptionUtils.hashPassword(newPassword);
-        config.setPasswordHash(newPasswordHash);
-        config.getJsonConfig().remove("password");
-        config.getJsonConfig().addProperty("password", newPasswordHash);
-        config.saveConfig();
+        accountStorage.put("password_hash", newPasswordHash);
+        accountStorage.saveData();
     }
 
     private void clearPasswordFields() {
@@ -255,24 +346,52 @@ public class SettingsController {
             throw new IOException("Failed to create the export file: " + file.getAbsolutePath());
         }
 
-        // Get current config as JsonObject
-        JsonObject configCopy = config.getJsonConfig();
-
-        // Create export structure with locked items
+        // Create export structure
         JsonObject exportData = new JsonObject();
-        exportData.add("config", configCopy);
 
-        // Get locked items from main list and create export structure
+        // Add system config data
+        JsonObject configData = new JsonObject();
+        Map<String, Object> systemConfig = systemConfigStorage.getAllData();
+        for (Map.Entry<String, Object> entry : systemConfig.entrySet()) {
+            if (entry.getValue() instanceof Boolean) {
+                configData.addProperty(entry.getKey(), (Boolean) entry.getValue());
+            } else if (entry.getValue() instanceof Number) {
+                configData.addProperty(entry.getKey(), (Number) entry.getValue());
+            } else if (entry.getValue() instanceof String) {
+                configData.addProperty(entry.getKey(), (String) entry.getValue());
+            }
+        }
+        exportData.add("config", configData);
+
+        // Get programs from programStorage
         JsonArray programsArray = new JsonArray();
+        Map<String, Object> programData = programStorage.getAllData();
+
+        for (Map.Entry<String, Object> entry : programData.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                Map<String, Object> itemData = (Map<String, Object>) entry.getValue();
+                if ("PROGRAM".equals(itemData.get("type"))) {
+                    String path = (String) itemData.get("path");
+                    boolean locked = (boolean) itemData.get("locked");
+                    String formattedPath = path + "[::]" + (locked ? "locked" : "unlocked");
+                    programsArray.add(formattedPath);
+                }
+            }
+        }
+
+        // Get folders from folderStorage
         JsonArray foldersArray = new JsonArray();
+        Map<String, Object> folderData = folderStorage.getAllData();
 
-        for (LockedItem item : config.lockedItems) {
-            String formattedPath = item.getPath() + "[::]" + (item.isLocked() ? "locked" : "unlocked");
-
-            if (item.getPath().endsWith(".exe")) {
-                programsArray.add(formattedPath);
-            } else {
-                foldersArray.add(formattedPath);
+        for (Map.Entry<String, Object> entry : folderData.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                Map<String, Object> itemData = (Map<String, Object>) entry.getValue();
+                if ("FOLDER".equals(itemData.get("type"))) {
+                    String path = (String) itemData.get("path");
+                    boolean locked = (boolean) itemData.get("locked");
+                    String formattedPath = path + "[::]" + (locked ? "locked" : "unlocked");
+                    foldersArray.add(formattedPath);
+                }
             }
         }
 
@@ -325,43 +444,69 @@ public class SettingsController {
         // Process the imported configuration
         mergeImportedConfig(importedData);
 
-        // Save the updated configuration
-        config.saveConfig();
-
+        // Note: mergeImportedConfig now saves changes to programStorage and folderStorage directly
     }
 
     private void mergeImportedConfig(JsonObject importedData) {
-        // Get current config
-        JsonObject currentConfig = config.getJsonConfig();
-
         // Import programs and folders
         JsonArray importedPrograms = getJsonArrayOrEmpty(importedData, "programs");
         JsonArray importedFolders = getJsonArrayOrEmpty(importedData, "folders");
 
-        // Get current programs and folders arrays
-        JsonArray currentPrograms = getJsonArrayOrEmpty(currentConfig, "programs");
-        JsonArray currentFolders = getJsonArrayOrEmpty(currentConfig, "folders");
+        // Get existing programs and folders from storage
+        Map<String, Object> existingProgramData = programStorage.getAllData();
+        Map<String, Object> existingFolderData = folderStorage.getAllData();
 
-        // Merge arrays (avoiding duplicates)
-        Set<String> existingPrograms = new HashSet<>();
-        Set<String> existingFolders = new HashSet<>();
+        // Create sets of existing paths to avoid duplicates
+        Set<String> existingProgramPaths = new HashSet<>();
+        Set<String> existingFolderPaths = new HashSet<>();
 
-        // Add existing items to sets
-        for (int i = 0; i < currentPrograms.size(); i++) {
-            existingPrograms.add(currentPrograms.get(i).getAsString());
+        // Add existing program paths to set
+        for (Map.Entry<String, Object> entry : existingProgramData.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                Map<String, Object> itemData = (Map<String, Object>) entry.getValue();
+                if ("PROGRAM".equals(itemData.get("type"))) {
+                    String path = (String) itemData.get("path");
+                    existingProgramPaths.add(path);
+                }
+            }
         }
-        for (int i = 0; i < currentFolders.size(); i++) {
-            existingFolders.add(currentFolders.get(i).getAsString());
+
+        // Add existing folder paths to set
+        for (Map.Entry<String, Object> entry : existingFolderData.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                Map<String, Object> itemData = (Map<String, Object>) entry.getValue();
+                if ("FOLDER".equals(itemData.get("type"))) {
+                    String path = (String) itemData.get("path");
+                    existingFolderPaths.add(path);
+                }
+            }
         }
 
         // Process imported programs
         for (int i = 0; i < importedPrograms.size(); i++) {
             String programEntry = importedPrograms.get(i).getAsString();
-            if (!existingPrograms.contains(programEntry)) {
-                // Parse the imported item and add to main list
-                LockedItem item = parseImportedItem(programEntry);
-                if (item != null) {
-                    config.lockedItems.add(item);
+            String[] parts = programEntry.split("\\Q[::]\\E");
+            if (parts.length == 2) {
+                String path = parts[0];
+                String lockStatus = parts[1];
+                boolean isLocked = "locked".equalsIgnoreCase(lockStatus);
+
+                // Check if program already exists
+                if (!existingProgramPaths.contains(path)) {
+                    // Create program data
+                    Map<String, Object> programData = new HashMap<>();
+                    String name = path.substring(path.lastIndexOf(File.separator) + 1);
+                    programData.put("path", path);
+                    programData.put("name", name);
+                    programData.put("locked", isLocked);
+                    programData.put("type", "PROGRAM");
+
+                    // Generate a new key for the program
+                    String newKey = "program_" + System.currentTimeMillis() + "_" + i;
+
+                    // Add program to storage
+                    programStorage.put(newKey, programData);
+                    logger.logInfo("Imported program: " + name);
                 }
             }
         }
@@ -369,35 +514,39 @@ public class SettingsController {
         // Process imported folders
         for (int i = 0; i < importedFolders.size(); i++) {
             String folderEntry = importedFolders.get(i).getAsString();
-            if (!existingFolders.contains(folderEntry)) {
-                // Parse the imported item and add to main list
-                LockedItem item = parseImportedItem(folderEntry);
-                if (item != null) {
-                    config.lockedItems.add(item);
+            String[] parts = folderEntry.split("\\Q[::]\\E");
+            if (parts.length == 2) {
+                String path = parts[0];
+                String lockStatus = parts[1];
+                boolean isLocked = "locked".equalsIgnoreCase(lockStatus);
+
+                // Check if folder already exists
+                if (!existingFolderPaths.contains(path)) {
+                    // Create folder data
+                    Map<String, Object> folderData = new HashMap<>();
+                    String name = path.substring(path.lastIndexOf(File.separator) + 1);
+                    folderData.put("path", path);
+                    folderData.put("name", name);
+                    folderData.put("locked", isLocked);
+                    folderData.put("type", "FOLDER");
+
+                    // Generate a new key for the folder
+                    String newKey = "folder_" + System.currentTimeMillis() + "_" + i;
+
+                    // Add folder to storage
+                    folderStorage.put(newKey, folderData);
+                    logger.logInfo("Imported folder: " + name);
                 }
             }
         }
+
+        // Save changes
+        programStorage.saveData();
+        folderStorage.saveData();
     }
 
-    private LockedItem parseImportedItem(String itemEntry) {
-        try {
-            String[] parts = itemEntry.split("\\Q[::]\\E");
-            if (parts.length != 2) {
-                logger.logWarning("Invalid format for imported item: " + itemEntry);
-                return null;
-            }
-
-            String path = parts[0];
-            String lockStatus = parts[1];
-            String name = path.substring(path.lastIndexOf(File.separator) + 1);
-            boolean isLocked = "locked".equalsIgnoreCase(lockStatus);
-
-            return new LockedItem(path, name, isLocked);
-        } catch (Exception e) {
-            logger.logError("Error parsing imported item: " + itemEntry, e);
-            return null;
-        }
-    }
+    // Note: parseImportedItem method has been removed as it's no longer needed.
+    // The import logic is now handled directly in mergeImportedConfig method.
 
     private JsonArray getJsonArrayOrEmpty(JsonObject config, String key) {
         return config.has(key) ? config.getAsJsonArray(key) : new JsonArray();
@@ -456,6 +605,22 @@ public class SettingsController {
         }
     }
 
+    public void toggleTwoFactorAuth(ActionEvent actionEvent) {
+
+        if(Main.use2FA){
+            Main.use2FA = false;
+            Main.logger.logInfo("Two-Factor Authentication disabled.");
+            twoFactorAuthCheckBox.setSelected(false);
+            systemConfigStorage.put("enable_2fa", false);
+        } else {
+            Main.use2FA = true;
+            Main.logger.logInfo("Two-Factor Authentication enabled.");
+            twoFactorAuthCheckBox.setSelected(true);
+            systemConfigStorage.put("enable_2fa", true);
+        }
+
+    }
+
     // ===============================
     // INNER CLASSES
     // ===============================
@@ -478,7 +643,7 @@ public class SettingsController {
         public boolean isCurrentPasswordValid() {
             String currentPasswordHash = EncryptionUtils.hashPassword(currentPassword);
             assert currentPasswordHash != null;
-            return currentPasswordHash.equals(config.getPasswordHash());
+            return currentPasswordHash.equals(accountStorage.get("password_hash", ""));
         }
 
         public boolean doNewPasswordsMatch() {

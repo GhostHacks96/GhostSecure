@@ -11,6 +11,7 @@ import javafx.stage.StageStyle;
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.gui.auth.LoginGUI;
 import me.ghosthacks96.ghostsecure.gui.auth.SetPasswordGUI;
+import me.ghosthacks96.ghostsecure.gui.auth.TwoFactorAuthGUI;
 import org.kordamp.bootstrapfx.BootstrapFX;
 
 import java.io.IOException;
@@ -31,10 +32,12 @@ public class SubGUIHandler {
     // FXML files
     private static final String LOGIN_FXML = "login.fxml";
     private static final String SET_PASSWORD_FXML = "setPasswordGUI.fxml";
+    private static final String TWO_FACTOR_AUTH_FXML = "twoFactorAuth.fxml";
 
     // Window titles
     private static final String LOGIN_WINDOW_TITLE = "GhostSecure - Login";
     private static final String SET_PASSWORD_WINDOW_TITLE = "GhostSecure - Set Password";
+    private static final String TWO_FACTOR_AUTH_WINDOW_TITLE = "GhostSecure - Two-Factor Authentication";
 
     public String loginError;
 
@@ -88,9 +91,9 @@ public class SubGUIHandler {
 
     /**
      * Shows the set password dialog and waits for user input
-     * @return the entered password if successful, null otherwise
+     * @return an array containing [password, email] if successful, null otherwise
      */
-    public String showSetPassPrompt() {
+    public String[] showSetPassPrompt() {
         Main.logger.logDebug("showSetPassPrompt() called");
 
         if (Platform.isFxApplicationThread()) {
@@ -108,8 +111,9 @@ public class SubGUIHandler {
 
     /**
      * Direct set password prompt when on FX thread
+     * @return an array containing [password, email] if successful, null otherwise
      */
-    private String showSetPassPromptDirectly() {
+    private String[] showSetPassPromptDirectly() {
         try {
             Stage passwordStage = createSetPasswordStage();
             SetPasswordGUI controller = getSetPasswordController(passwordStage);
@@ -226,11 +230,15 @@ public class SubGUIHandler {
 
     /**
      * Handle the result of password setting
+     * @return an array containing [password, email] if successful, null otherwise
      */
-    private String handlePasswordSetResult(SetPasswordGUI controller) {
+    private String[] handlePasswordSetResult(SetPasswordGUI controller) {
         if (controller.isPasswordSet()) {
             Main.logger.logDebug("Password set successfully");
-            return controller.getEnteredPassword();
+            return new String[] {
+                controller.getEnteredPassword(),
+                controller.getEnteredEmail()
+            };
         } else {
             Main.logger.logDebug("Password setup was unsuccessful");
             return null;
@@ -275,7 +283,7 @@ public class SubGUIHandler {
      * Check if login was successful by comparing password hashes
      */
     private boolean isLoginSuccessful() {
-        String storedHash = Main.config.getPasswordHash();
+        String storedHash = Main.accountStorage.get("password_hash", "");
         String enteredHash = LoginGUI.enteredPasswordHash;
 
         if (storedHash == null || enteredHash == null) {
@@ -284,6 +292,79 @@ public class SubGUIHandler {
         }
 
         return storedHash.equals(enteredHash);
+    }
+
+    /**
+     * Shows the two-factor authentication dialog and waits for user input
+     * @param verificationCode The code that the user should enter
+     * @param email The user's email address
+     * @param resendAction A runnable that will be executed when the resend button is clicked
+     * @return true if verification was successful, false otherwise
+     */
+    public boolean showTwoFactorAuthPrompt(String verificationCode, String email, Runnable resendAction) {
+        Main.logger.logDebug("showTwoFactorAuthPrompt() called");
+
+        if (Platform.isFxApplicationThread()) {
+            return showTwoFactorAuthPromptDirectly(verificationCode, email, resendAction);
+        }
+
+        try {
+            return Boolean.TRUE.equals(executeOnFxThread(() -> 
+                showTwoFactorAuthPromptDirectly(verificationCode, email, resendAction)));
+        } catch (Exception e) {
+            Main.logger.logError("Unexpected error in showTwoFactorAuthPrompt: " + e.getMessage());
+            Main.logger.logDebug("Exception: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Direct two-factor authentication prompt when on FX thread
+     */
+    private boolean showTwoFactorAuthPromptDirectly(String verificationCode, String email, Runnable resendAction) {
+        try {
+            Stage twoFactorAuthStage = createTwoFactorAuthStage();
+            TwoFactorAuthGUI controller = getTwoFactorAuthController(twoFactorAuthStage);
+
+            // Initialize the controller with the verification code and email
+            controller.initialize(verificationCode, email, resendAction);
+
+            Main.logger.logDebug("TwoFactorAuth stage showing");
+            twoFactorAuthStage.showAndWait();
+
+            return controller.isVerificationSuccessful();
+        } catch (IOException e) {
+            Main.logger.logError("Error loading two-factor authentication GUI: " + e.getMessage());
+            Main.logger.logDebug("Exception: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Create and configure the two-factor authentication stage
+     */
+    private Stage createTwoFactorAuthStage() throws IOException {
+        FXMLLoader loader = new FXMLLoader(Main.class.getResource(TWO_FACTOR_AUTH_FXML));
+        Scene scene = new Scene(loader.load());
+
+        Main.logger.logDebug("TwoFactorAuth GUI loaded");
+
+        Stage stage = new Stage();
+        configureStage(stage, scene, TWO_FACTOR_AUTH_WINDOW_TITLE);
+        stage.setResizable(false);
+
+        // Store the loader for later access to the controller
+        stage.setUserData(loader);
+
+        return stage;
+    }
+
+    /**
+     * Get the two-factor authentication controller from the stage
+     */
+    private TwoFactorAuthGUI getTwoFactorAuthController(Stage twoFactorAuthStage) {
+        FXMLLoader loader = (FXMLLoader) twoFactorAuthStage.getUserData();
+        return loader.getController();
     }
 
     /**
@@ -305,9 +386,9 @@ public class SubGUIHandler {
 
         try {
             // Add timeout to prevent indefinite waiting
-            boolean completed = latch.await(30, TimeUnit.SECONDS);
+            boolean completed = latch.await(120, TimeUnit.SECONDS);
             if (!completed) {
-                Main.logger.logError("FX thread execution timed out after 30 seconds");
+                Main.logger.logError("FX thread execution timed out after 120 seconds");
                 return null;
             }
         } catch (InterruptedException e) {

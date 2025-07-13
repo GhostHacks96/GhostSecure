@@ -8,12 +8,10 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/GhostSecureRecoveryTool" />
           </set>
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
-        <option name="externalProjectPath" value="$PROJECT_DIR$/GhostSecureRecoveryTool" />
         <option name="gradleHome" value="C:\gradle\gradle-8.14" />
       </GradleProjectSettings>
     </option>

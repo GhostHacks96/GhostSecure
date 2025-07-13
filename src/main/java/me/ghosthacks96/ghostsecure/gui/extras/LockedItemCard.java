@@ -111,7 +111,6 @@ public class LockedItemCard extends HBox {
     private void toggleLockStatus() {
         item.setLocked(!item.isLocked());
         updateLockStatus();
-        Main.config.saveConfig();
     }
 
     private void updateLockStatus() {

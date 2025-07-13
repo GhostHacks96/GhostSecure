@@ -377,23 +377,6 @@ public class Logging {
         }
     }
 
-    public void switchDebugMode(boolean debugEnabled) {
-        Main.DEBUG_MODE = debugEnabled;
-        if (debugEnabled) {
-            logInfo("Debug mode enabled");
-            if (debugConsole == null) {
-                debugConsole = DebugConsole.getInstance();
-                debugConsole.showConsole();
-            } else {
-                debugConsole.showConsole();
-            }
-        } else {
-            logInfo("Debug mode disabled");
-            if (debugConsole != null) {
-                debugConsole.hideConsole();
-            }
-        }
-    }
 
     private enum LogLevel {
         DEBUG("🔍 [DEBUG]", "[DBG]"),

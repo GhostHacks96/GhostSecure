@@ -31,7 +31,6 @@ public class ServiceControllerScreen {
     public void startService() {
         logger.logInfo("Starting locking service.");
 
-        Main.config.saveConfig();
         ServiceController.startBlockerDaemon();
         Platform.runLater(this::updateServiceStatus);
 
@@ -41,7 +40,6 @@ public class ServiceControllerScreen {
     @FXML
     public void stopService() {
         logger.logInfo("Stopping locking service.");
-        Main.config.saveConfig();
         ServiceController.stopBlockerDaemon();
         Platform.runLater(this::updateServiceStatus);
         logger.logInfo("Locking service stopped.");

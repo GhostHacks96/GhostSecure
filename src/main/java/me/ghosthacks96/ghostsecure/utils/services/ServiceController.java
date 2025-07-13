@@ -1,6 +1,8 @@
 package me.ghosthacks96.ghostsecure.utils.services;
 
 import me.ghosthacks96.ghostsecure.Main;
+import me.ghosthacks96.ghostsecure.utils.services.extras.FolderManager;
+import me.ghosthacks96.ghostsecure.utils.services.extras.ProgramManager;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

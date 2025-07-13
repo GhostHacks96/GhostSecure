@@ -7,6 +7,7 @@ import com.google.gson.JsonSyntaxException;
 import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
 import me.ghosthacks96.ghostsecure.utils.encryption.EncryptionUtils;
+import me.ghosthacks96.ghostsecure.itemTypes.LockedItemFactory;
 
 import javax.crypto.SecretKey;
 import java.io.File;
@@ -21,12 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Configuration manager for GhostSecure application.
- * Handles encrypted configuration storage, user authentication, and locked items management.
- *
- * This class is thread-safe and provides robust error handling for configuration operations.
- */
+@Deprecated
 public class Config {
 
     // Constants
@@ -40,6 +36,7 @@ public class Config {
     private static final String FOLDERS_ARRAY = "folders";
     private static final String PASSWORD_PROPERTY = "password";
     private static final String MODE_PROPERTY = "mode";
+    private static final String AUTO_START_PROPERTY = "auto_start";
 
     // Instance fields
     private final Gson gson;
@@ -110,7 +107,7 @@ public class Config {
             byte[] newSalt = EncryptionUtils.generateSalt();
 
             ensureAppDataDirectoryExists();
-            Files.write(saltPath, newSalt);
+            //Files.write(saltPath, newSalt);
 
             logger.logInfo("New encryption salt created.");
             return newSalt;
@@ -236,6 +233,11 @@ public class Config {
         if (!config.has(MODE_PROPERTY)) {
             config.addProperty(MODE_PROPERTY, DEFAULT_MODE);
             logger.logDebug("Mode property added to config");
+        }
+
+        if (!config.has(AUTO_START_PROPERTY)) {
+            config.addProperty(AUTO_START_PROPERTY, false);
+            logger.logDebug("Auto-start property added to config");
         }
     }
 
@@ -399,7 +401,7 @@ public class Config {
             String name = extractFileName(path);
             boolean isLocked = LOCKED_STATUS.equalsIgnoreCase(lockStatus);
 
-            return Optional.of(new LockedItem(path, name, isLocked));
+            return Optional.of(LockedItemFactory.createLockedItem(path, name, isLocked));
 
         } catch (Exception e) {
             logger.logError("Error parsing locked item: " + input, e);
@@ -434,6 +436,7 @@ public class Config {
             config.add(PROGRAMS_ARRAY, new JsonArray());
             config.add(FOLDERS_ARRAY, new JsonArray());
             config.addProperty(PASSWORD_PROPERTY, "");
+            config.addProperty(AUTO_START_PROPERTY, false);
 
             lockedItems.clear();
             passwordHash = "";
@@ -572,6 +575,38 @@ public class Config {
      */
     public boolean isInitialized() {
         return initialized;
+    }
+
+    /**
+     * Get the auto-start setting.
+     *
+     * @return true if auto-start is enabled
+     */
+    public boolean isAutoStartEnabled() {
+        configLock.readLock().lock();
+        try {
+            return config != null && config.has(AUTO_START_PROPERTY) && 
+                   config.get(AUTO_START_PROPERTY).getAsBoolean();
+        } finally {
+            configLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Set the auto-start setting.
+     *
+     * @param enabled true to enable auto-start
+     */
+    public void setAutoStart(boolean enabled) {
+        configLock.writeLock().lock();
+        try {
+            if (config != null) {
+                config.addProperty(AUTO_START_PROPERTY, enabled);
+                logger.logInfo("Auto-start setting " + (enabled ? "enabled" : "disabled"));
+            }
+        } finally {
+            configLock.writeLock().unlock();
+        }
     }
 
     /**

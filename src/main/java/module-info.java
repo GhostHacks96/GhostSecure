@@ -5,6 +5,7 @@ module ghostsecure {
     requires org.kordamp.bootstrapfx.core;
     requires java.desktop;
     requires java.net.http;
+    requires org.yaml.snakeyaml;
 
     opens me.ghosthacks96.ghostsecure to javafx.fxml, com.google.gson;
     exports me.ghosthacks96.ghostsecure;
@@ -22,4 +23,5 @@ module ghostsecure {
     opens me.ghosthacks96.ghostsecure.gui.auth to com.google.gson, javafx.fxml;
     exports me.ghosthacks96.ghostsecure.gui.extras;
     opens me.ghosthacks96.ghostsecure.gui.extras to com.google.gson, javafx.fxml;
+    exports me.ghosthacks96.ghostsecure.utils.services.extras;
 }

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<?import javafx.scene.effect.DropShadow?>
+<BorderPane xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.ghosthacks96.ghostsecure.gui.auth.TwoFactorAuthGUI">
+    <style>
+        -fx-background-color: linear-gradient(to bottom right, #0a0a0a 0%, #1a1a1a 100%);
+    </style>
+
+    <center>
+        <VBox alignment="CENTER" spacing="35" maxWidth="480" maxHeight="650">
+            <padding>
+                <Insets bottom="50" left="50" right="50" top="50" />
+            </padding>
+            <style>
+                -fx-background-color: linear-gradient(to bottom right, #1e1e1e 0%, #2a2a2a 100%);
+                -fx-background-radius: 18;
+                -fx-border-color: #00d4ff4d;
+                -fx-border-width: 1;
+                -fx-border-radius: 18;
+                -fx-effect: dropshadow(gaussian, #00000066, 25, 0, 0, 8);
+            </style>
+
+            <!-- App Icon and Title Section -->
+            <VBox alignment="CENTER" spacing="25">
+                <ImageView fx:id="appIcon" fitHeight="90" fitWidth="90" preserveRatio="true">
+                    <Image url="@imgs/app_icon.png" />
+                    <effect>
+                        <DropShadow color="#00d4ff" radius="15" spread="0.3" />
+                    </effect>
+                </ImageView>
+
+                <VBox alignment="CENTER" spacing="8">
+                    <Label text="Two-Factor Authentication" textAlignment="CENTER">
+                        <font>
+                            <Font name="System Bold" size="28" />
+                        </font>
+                        <style>
+                            -fx-text-fill: #00d4ff;
+                            -fx-effect: dropshadow(gaussian, #00d4ff66, 5, 0, 0, 0);
+                        </style>
+                    </Label>
+
+                    <Label text="Enter the verification code sent to your email" textAlignment="CENTER" wrapText="true">
+                        <font>
+                            <Font size="16" />
+                        </font>
+                        <style>
+                            -fx-text-fill: #b0b0b0;
+                        </style>
+                    </Label>
+                </VBox>
+            </VBox>
+
+            <!-- Input Section -->
+            <VBox spacing="25" alignment="CENTER">
+                <VBox spacing="8" alignment="CENTER_LEFT">
+                    <Label text="Verification Code">
+                        <font>
+                            <Font name="System Bold" size="14" />
+                        </font>
+                        <style>
+                            -fx-text-fill: #00d4ff;
+                        </style>
+                    </Label>
+                    <TextField fx:id="codeField" promptText="Enter 6-digit code" prefWidth="350" prefHeight="50">
+                        <font>
+                            <Font size="14" />
+                        </font>
+                    </TextField>
+                </VBox>
+
+                <HBox spacing="10" alignment="CENTER">
+                    <Button fx:id="submitButton" onAction="#onSubmitButtonClick" text="VERIFY" prefWidth="170" prefHeight="55" styleClass="primary">
+                        <font>
+                            <Font name="System Bold" size="16" />
+                        </font>
+                    </Button>
+                    
+                    <Button fx:id="resendButton" onAction="#onResendButtonClick" text="RESEND CODE" prefWidth="170" prefHeight="55" styleClass="secondary">
+                        <font>
+                            <Font name="System Bold" size="16" />
+                        </font>
+                    </Button>
+                </HBox>
+            </VBox>
+
+            <!-- Error Message -->
+            <Label fx:id="errorLabel" textAlignment="CENTER" wrapText="true" maxWidth="350" visible="false" styleClass="error-label">
+                <font>
+                    <Font size="13" />
+                </font>
+            </Label>
+        </VBox>
+    </center>
+</BorderPane>

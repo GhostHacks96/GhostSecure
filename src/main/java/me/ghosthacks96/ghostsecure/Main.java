@@ -1,6 +1,5 @@
 package me.ghosthacks96.ghostsecure;
 
-import com.google.gson.JsonArray;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -10,20 +9,20 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import me.ghosthacks96.ghostsecure.gui.HomeGUI;
-import me.ghosthacks96.ghostsecure.gui.extras.SplashGUI;
 import me.ghosthacks96.ghostsecure.gui.SubGUIHandler;
-import me.ghosthacks96.ghostsecure.gui.tabs.ServiceControllerScreen;
-import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
+import me.ghosthacks96.ghostsecure.gui.extras.SplashGUI;
 import me.ghosthacks96.ghostsecure.utils.api_handlers.RecoveryHandler;
 import me.ghosthacks96.ghostsecure.utils.api_handlers.Update;
-import me.ghosthacks96.ghostsecure.utils.services.*;
 import me.ghosthacks96.ghostsecure.utils.debug.DebugConsole;
 import me.ghosthacks96.ghostsecure.utils.file_handlers.Config;
 import me.ghosthacks96.ghostsecure.utils.file_handlers.Logging;
+import me.ghosthacks96.ghostsecure.utils.file_handlers.MigrationUtil;
+import me.ghosthacks96.ghostsecure.utils.file_handlers.StorageManager;
+import me.ghosthacks96.ghostsecure.utils.services.ServiceController;
+import me.ghosthacks96.ghostsecure.utils.services.SystemTrayIntegration;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -47,18 +46,25 @@ public class Main extends Application {
     public static SubGUIHandler sgh = new SubGUIHandler();
     public static RecoveryHandler recoveryHandler;
 
+    public static StorageManager programStorage;
+    public static StorageManager folderStorage;
+    public static StorageManager accountStorage;
+    public static StorageManager systemConfigStorage;
+
     // UI components
     public static FXMLLoader mainLoader;
     public static Scene mainScene;
     public static Stage mainStage;
 
     // Application state
+    public static boolean use2FA = true; // Enable two-factor authentication by default
     public static boolean DEBUG_MODE = false;
     private static SplashGUI splashController;
 
+    private static boolean MIGRATION_PERFORMED = false; // Flag to track if migration has been performed
+
     public static void main(String[] args) {
         initializeLogging();
-        checkDebugMode();
         launch();
     }
 
@@ -72,44 +78,32 @@ public class Main extends Application {
         logger.logInfo("Initializing GhostSecure... v" + VERSION);
     }
 
-    /**
-     * Check if debug mode should be enabled
-     */
-    private static void checkDebugMode() {
-        DEBUG_MODE = true;//new File(DEBUG_FILE_PATH).exists();
-        logger.logInfo("Debug mode is " + (DEBUG_MODE ? "enabled" : "disabled"));
-    }
+
 
     /**
      * Toggle debug mode on/off
      */
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void shiftDebug(boolean debug) {
         DEBUG_MODE = debug;
-        try {
-            File debugFile = new File(DEBUG_FILE_PATH);
-
-            if (DEBUG_MODE) {
-                if (!debugFile.exists()) {
-                    debugFile.createNewFile();
-                }
-                logger.logInfo("Debug mode enabled.");
-            } else {
-                if (debugFile.exists()) {
-                    debugFile.delete();
-                }
-                logger.logInfo("Debug mode disabled.");
-            }
-        } catch (IOException e) {
-            logger.logError("Failed to shift debug mode: " + e.getMessage());
-        }
+        systemConfigStorage.put("debug_mode", debug);
     }
 
 
     @Override
     public void start(Stage stage) {
         try {
+            // Set up global uncaught exception handler
+            Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+                logger.logError("Uncaught exception in thread: " + thread.getName(), throwable);
+                shutDownSystem();
+            });
+
+            // Prevent application from exiting when all windows are closed
+            Platform.setImplicitExit(false);
+
+            // Add shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(this::shutDownSystem));
+
             showSplashScreen();
             startInitializationTask(stage);
         } catch (Exception e) {
@@ -226,7 +220,26 @@ public class Main extends Application {
                     try {
                         updateSplashMessage("Loading configuration...");
                         config = new Config();
-                        recoveryHandler = new RecoveryHandler();
+
+                        programStorage = new StorageManager("programs");
+                        folderStorage = new StorageManager("folders");
+                        accountStorage = new StorageManager("account");
+                        systemConfigStorage = new StorageManager("system-config", false); // Unencrypted storage for system settings
+
+                        // Load data from config and migrate to storage managers
+                        if(MigrationUtil.checkAndMigrateData()){
+                            MIGRATION_PERFORMED = true;
+                        }
+
+                        // Load data from storage managers
+                        programStorage.loadData();
+                        folderStorage.loadData();
+                        accountStorage.loadData();
+                        systemConfigStorage.loadData();
+
+                        shiftDebug(systemConfigStorage.get("debug_mode", false));
+                        use2FA = systemConfigStorage.get("enable_2fa", false);
+
                         return null;
                     } catch (Exception e) {
                         logger.logError("Error loading configuration: " + e.getMessage(), e);
@@ -238,6 +251,7 @@ public class Main extends Application {
             private CompletableFuture<Void> checkRecoveryStatus() {
                 return CompletableFuture.supplyAsync(() -> {
                     try {
+                        recoveryHandler = new RecoveryHandler();
                         updateSplashMessage("Checking recovery status...");
 
                         if (recoveryHandler.shouldEnterRecoveryMode()) {
@@ -273,7 +287,8 @@ public class Main extends Application {
                     updateSplashMessage("Checking configuration...");
 
                     try {
-                        if (!config.getConfigFile().exists()) {
+                        // Check if accountStorage has password_hash, which indicates it's not a first-time setup
+                        if (!accountStorage.containsKey("password_hash") || MIGRATION_PERFORMED) {
                             return handleFirstTimeSetup();
                         } else {
                             return handleExistingConfiguration();
@@ -288,25 +303,27 @@ public class Main extends Application {
 
             private boolean handleFirstTimeSetup() {
                 try {
-                    config.setDefaultConfig();
-                    config.getJsonConfig().addProperty("mode", "unlock");
-                    config.getJsonConfig().add("programs", new JsonArray());
-                    config.getJsonConfig().add("folders", new JsonArray());
-
                     logger.logInfo("Starting new setup.");
                     Platform.runLater(() -> splashController.close());
 
-                    String newPassword = sgh.showSetPassPrompt();
-                    if (newPassword == null || newPassword.isEmpty()) {
+                    String[] setupInfo = sgh.showSetPassPrompt();
+                    if (setupInfo == null || setupInfo[0] == null || setupInfo[0].isEmpty()) {
                         logger.logError("Password setup failed. Exiting application.");
                         sgh.showError("Setup Error", "Password setup is required to proceed.");
                         return false;
                     }
+                    logger.logInfo("email"+ setupInfo[1]+" newPassword: " + setupInfo[0]);
 
-                    config.setPasswordHash(hashPassword(newPassword));
-                    config.getJsonConfig().addProperty("password", config.getPasswordHash());
+                    String newPassword = setupInfo[0];
+                    String email = setupInfo[1];
 
-                    logger.logInfo("New password setup successfully.");
+                    // Store password hash and email
+                    String passwordHash = hashPassword(newPassword);
+                    accountStorage.put("password_hash", passwordHash);
+                    accountStorage.put("email", email);
+                    accountStorage.put("mode", "unlock");
+
+                    logger.logInfo("New password and email setup successfully.");
                     return true;
                 } catch (Exception e) {
                     logger.logError("Error setting default config: " + e.getMessage(), e);
@@ -317,22 +334,97 @@ public class Main extends Application {
 
             private boolean handleExistingConfiguration() {
                 updateSplashMessage("Loading configuration...");
-                config.loadConfig(false);
-
+                // No need to load config here as we're using StorageManager now
 
                 Platform.runLater(() -> splashController.close());
 
-                boolean loginSuccessful = true;//sgh.openLoginScene();
-                if (!loginSuccessful) {
-                    logger.logError("Login failed. Invalid password.");
-                    config.getJsonConfig().remove("mode");
-                    config.getJsonConfig().addProperty("mode", "lock");
-                    ServiceController.startBlockerDaemon();
+                boolean loginSuccessful = false;
+                boolean twoFactorSuccessful = false;
+
+                // Check if auto-start is enabled
+                boolean autoStartEnabled = false;
+
+                // First check if auto-start exists in systemConfigStorage (after migration)
+                if (systemConfigStorage.containsKey("auto_start")) {
+                    autoStartEnabled = systemConfigStorage.get("auto_start", false);
+                    logger.logDebug("Using auto-start setting from system-config: " + autoStartEnabled);
+                }
+                if (autoStartEnabled) {
+                    // Bypass login GUI if auto-start is enabled
+                    logger.logInfo("Auto-start enabled. Bypassing login GUI.");
+                    loginSuccessful = false;
+                    twoFactorSuccessful = true; // Also bypass 2FA
                 } else {
-                    logger.logInfo("Login successful.");
+                    // Show login GUI if auto-start is not enabled
+                    loginSuccessful = sgh.openLoginScene();
+
+                    // If password is correct, proceed with 2FA
+                    if (loginSuccessful) {
+                        logger.logInfo("Password verification successful. Proceeding with two-factor authentication.");
+                        twoFactorSuccessful = handleTwoFactorAuthentication();
+                    }
                 }
 
-                return loginSuccessful;
+                // Final authentication result
+                boolean authSuccessful = loginSuccessful && twoFactorSuccessful;
+
+                if (!authSuccessful) {
+                    if (!loginSuccessful) {
+                        logger.logError("Login failed. Invalid password.");
+                    } else {
+                        logger.logError("Two-factor authentication failed.");
+                    }
+                    accountStorage.put("mode", "lock");
+                    ServiceController.startBlockerDaemon();
+                } else {
+                    logger.logInfo("Authentication successful.");
+                }
+
+                return authSuccessful;
+            }
+
+            /**
+             * Handle the two-factor authentication process
+             * @return true if 2FA was successful, false otherwise
+             */
+            private boolean handleTwoFactorAuthentication() {
+                try {
+                    // Get the user's email from storage
+                    String userEmail = accountStorage.get("email", "");
+                    if (userEmail.isEmpty()) {
+                        logger.logError("No email address found for two-factor authentication.");
+                        sgh.showError("Authentication Error", "No email address found for two-factor authentication. Please contact support.");
+                        return false;
+                    }
+
+                    if(!use2FA) {
+                        return true;
+                    }
+
+                    // Send verification code
+                    String verificationCode = me.ghosthacks96.ghostsecure.utils.auth.TwoFactorAuthUtil.sendVerificationCode(userEmail);
+                    if (verificationCode == null) {
+                        logger.logError("Failed to send verification code.");
+                        sgh.showError("Authentication Error", "Failed to send verification code. Please check your email settings and try again.");
+                        return false;
+                    }
+
+                    // Create a resend action
+                    Runnable resendAction = () -> {
+                        String newCode = me.ghosthacks96.ghostsecure.utils.auth.TwoFactorAuthUtil.sendVerificationCode(userEmail);
+                        if (newCode != null) {
+                            // Update the expected code in the controller
+                            // This is handled by the TwoFactorAuthGUI class
+                        }
+                    };
+
+                    // Show 2FA prompt
+                    return sgh.showTwoFactorAuthPrompt(verificationCode, userEmail, resendAction);
+                } catch (Exception e) {
+                    logger.logError("Error during two-factor authentication: " + e.getMessage(), e);
+                    sgh.showError("Authentication Error", "An error occurred during two-factor authentication: " + e.getMessage());
+                    return false;
+                }
             }
 
             private void updateSplashMessage(String message) {
@@ -349,7 +441,7 @@ public class Main extends Application {
      */
     private void handleInitializationSuccess(Stage stage, Task<Boolean> initTask) {
         try {
-            if(initTask.getValue()) {
+            if (initTask.getValue()) {
                 setupMainUI(stage);
             }
             logger.logInfo("Main stage displayed successfully.");
@@ -374,7 +466,7 @@ public class Main extends Application {
      */
     private void setupMainUI(Stage stage) throws IOException {
         mainStage = stage;
-        mainLoader = new FXMLLoader(Main.class.getResource("home.fxml"));
+        mainLoader = new FXMLLoader(Main.class.getResource("/me/ghosthacks96/ghostsecure/home.fxml"));
         mainScene = new Scene(mainLoader.load());
 
         // Apply dark theme
@@ -393,32 +485,57 @@ public class Main extends Application {
 
         splashController.close();
 
-        if(config.getJsonConfig().get("mode").getAsString().equals("lock")) {
+        String mode = accountStorage.get("mode", "unlock");
+        if (mode.equals("lock")) {
             ServiceController.startBlockerDaemon();
-            ServiceControllerScreen homeController = mainLoader.getController();
-            homeController.updateServiceStatus();
+            HomeGUI homeController = mainLoader.getController();
+            homeController.updateLockStatus();
         }
         mainStage.setOnCloseRequest(event -> {
-            if(!ServiceController.isServiceRunning()){
                 shutDownSystem();
-            }
         });
 
-        mainStage.show();
-        mainStage.toFront();
+        // Check if auto-start is enabled
+        boolean autoStartEnabled = false;
+        if (systemConfigStorage.containsKey("auto_start")) {
+            autoStartEnabled = systemConfigStorage.get("auto_start", false);
+        }
 
-        // Setup system tray integration
+        // Setup system tray integration first
         SystemTrayIntegration sysTray = new SystemTrayIntegration(this);
         sysTray.setupSystemTray(mainStage);
+
+        // Only show the main window if auto-start is not enabled
+        if (!autoStartEnabled) {
+            mainStage.show();
+            mainStage.toFront();
+        } else {
+            logger.logInfo("Auto-start enabled. Starting minimized to system tray.");
+        }
     }
 
-    public void shutDownSystem(){
+    public void shutDownSystem() {
         SystemTrayIntegration.removeTrayIcon();
         ServiceController.stopBlockerDaemon();
-        config.saveConfig();
-        if(DEBUG_MODE) DebugConsole.getInstance().killConsole();
+
+        // Save data to storage managers
+        if (programStorage != null) {
+            programStorage.saveData();
+        }
+        if (folderStorage != null) {
+            folderStorage.saveData();
+        }
+        if (accountStorage != null) {
+            accountStorage.saveData();
+        }
+        if (systemConfigStorage != null) {
+            systemConfigStorage.saveData();
+        }
+
+        if (DEBUG_MODE) DebugConsole.getInstance().killConsole();
         logger.onShutdown();
         Platform.exit();
     }
+
 
 }

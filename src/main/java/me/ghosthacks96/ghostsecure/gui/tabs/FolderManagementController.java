@@ -1,5 +1,6 @@
 package me.ghosthacks96.ghostsecure.gui.tabs;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -11,15 +12,18 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.gui.extras.LockedItemCard;
+import me.ghosthacks96.ghostsecure.itemTypes.LockedFolder;
 import me.ghosthacks96.ghostsecure.itemTypes.LockedItem;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static me.ghosthacks96.ghostsecure.Main.config;
+import static me.ghosthacks96.ghostsecure.Main.folderStorage;
 import static me.ghosthacks96.ghostsecure.Main.logger;
 
 public class FolderManagementController {
@@ -58,12 +62,31 @@ public class FolderManagementController {
         cardScrollPane.setStyle("-fx-background-color: transparent; -fx-border-color: #00d4ff33; -fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8;");
     }
 
-    public static void refreshCardDisplay() {
+    public void refreshCardDisplay() {
         // This would be called from your main refresh method
         logger.logInfo("Refreshing card display.");
-        folderItems.setAll(config.lockedItems.stream()
-                .filter(item -> !item.getPath().endsWith(".exe"))
-                .collect(Collectors.toList()));
+
+        List<LockedItem> folders = new ArrayList<>();
+        Map<String, Object> allData = folderStorage.getAllData();
+
+        // Convert storage data to LockedItem objects
+        for (Map.Entry<String, Object> entry : allData.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                Map<String, Object> itemData = (Map<String, Object>) entry.getValue();
+                if ("FOLDER".equals(itemData.get("type"))) {
+                    String path = (String) itemData.get("path");
+                    String name = (String) itemData.get("name");
+                    boolean locked = (boolean) itemData.get("locked");
+
+                    LockedFolder folder = new LockedFolder(path, name);
+                    folder.setLocked(locked);
+                    folders.add(folder);
+                }
+            }
+        }
+
+        folderItems.setAll(folders);
+        Platform.runLater(this::updateCardDisplay);
     }
 
     private void updateCardDisplay() {
@@ -76,8 +99,9 @@ public class FolderManagementController {
             cardContainer.getChildren().add(emptyLabel);
             return;
         }
-
+        logger.logDebug("Folder items count: " + folderItems.size());
         for (LockedItem item : folderItems) {
+            logger.logDebug("Folder item: " + item.getName());
             LockedItemCard card = new LockedItemCard(item);
             cardContainer.getChildren().add(card);
         }
@@ -104,14 +128,20 @@ public class FolderManagementController {
             return;
         }
 
-        LockedItem lockedFolder = new LockedItem(
-                selectedDirectory.getAbsolutePath(),
-                selectedDirectory.getName(),
-                true
-        );
+        // Create folder data
+        Map<String, Object> folderData = new HashMap<>();
+        folderData.put("path", selectedDirectory.getAbsolutePath());
+        folderData.put("name", selectedDirectory.getName());
+        folderData.put("locked", false);
+        folderData.put("type", "FOLDER");
 
-        config.lockedItems.add(lockedFolder);
-        config.saveConfig();
+        // Generate a new key for the folder
+        String newKey = "folder_" + System.currentTimeMillis();
+
+        // Add folder to storage
+        folderStorage.put(newKey, folderData);
+        folderStorage.saveData();
+
         refreshCardDisplay();
         updateCardDisplay();
         logger.logInfo("Added folder: " + selectedDirectory.getName());
@@ -130,29 +160,80 @@ public class FolderManagementController {
             return;
         }
 
-        config.lockedItems.removeAll(selectedFolders);
-        config.saveConfig();
+        // Get all folder data
+        Map<String, Object> allData = folderStorage.getAllData();
+
+        // Find and remove selected folders
+        for (String key : new ArrayList<>(allData.keySet())) {
+            if (allData.get(key) instanceof Map) {
+                Map<String, Object> itemData = (Map<String, Object>) allData.get(key);
+                if ("FOLDER".equals(itemData.get("type"))) {
+                    String path = (String) itemData.get("path");
+
+                    // Check if this folder is selected for removal
+                    for (LockedItem selectedFolder : selectedFolders) {
+                        if (selectedFolder.getPath().equals(path)) {
+                            folderStorage.remove(key);
+                            logger.logInfo("Removed folder: " + selectedFolder.getName());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        folderStorage.saveData();
         refreshCardDisplay();
         updateCardDisplay();
-
-        selectedFolders.forEach(item ->
-                logger.logInfo("Removed folder: " + item.getName())
-        );
     }
 
     @FXML
     private void swapFLockStatus() {
         logger.logInfo("Toggling lock status for selected folders.");
 
-        folderItems.stream()
+        // Get selected folders
+        List<LockedItem> selectedFolders = folderItems.stream()
                 .filter(LockedItem::isSelected)
-                .forEach(item -> {
-                    item.setLocked(!item.isLocked());
-                    item.setSelected(false);
-                    logger.logInfo("Toggled lock status for folder: " + item.getName());
-                });
+                .collect(Collectors.toList());
 
-        config.saveConfig();
+        if (selectedFolders.isEmpty()) {
+            logger.logWarning("No folders selected for toggling lock status.");
+            return;
+        }
+
+        // Get all folder data
+        Map<String, Object> allData = folderStorage.getAllData();
+
+        // Find and update selected folders
+        for (String key : allData.keySet()) {
+            if (allData.get(key) instanceof Map) {
+                Map<String, Object> itemData = (Map<String, Object>) allData.get(key);
+                if ("FOLDER".equals(itemData.get("type"))) {
+                    String path = (String) itemData.get("path");
+
+                    // Check if this folder is selected for toggling
+                    for (LockedItem selectedFolder : selectedFolders) {
+                        if (selectedFolder.getPath().equals(path)) {
+                            // Toggle locked status
+                            boolean currentLocked = (boolean) itemData.get("locked");
+                            itemData.put("locked", !currentLocked);
+
+                            // Update in storage
+                            folderStorage.put(key, itemData);
+
+                            // Update in memory
+                            selectedFolder.setLocked(!currentLocked);
+                            selectedFolder.setSelected(false);
+
+                            logger.logInfo("Toggled lock status for folder: " + selectedFolder.getName());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        folderStorage.saveData();
         updateCardDisplay();
     }
 

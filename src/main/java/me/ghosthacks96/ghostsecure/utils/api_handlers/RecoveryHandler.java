@@ -6,6 +6,7 @@ import me.ghosthacks96.ghostsecure.Main;
 import me.ghosthacks96.ghostsecure.utils.encryption.EncryptionUtils;
 import me.ghosthacks96.ghostsecure.utils.file_handlers.Logging;
 import me.ghosthacks96.ghostsecure.gui.SubGUIHandler;
+import me.ghosthacks96.ghostsecure.utils.auth.TwoFactorAuthUtil;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -67,13 +68,22 @@ public class RecoveryHandler {
                 return false;
             }
 
-            String newPassword = promptForNewPassword();
-            if (newPassword == null) {
+            String[] setupInfo = promptForNewPasswordAndEmail();
+            if (setupInfo == null) {
                 showRecoveryErrorMessage("Password reset cancelled by user");
                 return false;
             }
 
-            if (updatePasswordInConfig(newPassword)) {
+            String newPassword = setupInfo[0];
+            String email = setupInfo[1];
+
+            // Verify with 2FA
+            if (!handleTwoFactorAuthentication(email)) {
+                showRecoveryErrorMessage("Two-factor authentication failed");
+                return false;
+            }
+
+            if (updatePasswordInConfig(newPassword, email)) {
                 deleteRecoveryFile();
                 showRecoverySuccessMessage();
                 return true;
@@ -97,14 +107,63 @@ public class RecoveryHandler {
         return true;
     }
 
-    private String promptForNewPassword() {
-        String newPassword = sgh.showSetPassPrompt();
-        if (newPassword == null || newPassword.isEmpty()) {
+    private String[] promptForNewPasswordAndEmail() {
+        String[] setupInfo = sgh.showSetPassPrompt();
+        if (setupInfo == null || setupInfo[0] == null || setupInfo[0].isEmpty()) {
             logger.logError("Password reset cancelled by user");
             sgh.showError("Recovery Cancelled", "Password reset was cancelled.");
             return null;
         }
-        return newPassword;
+        return setupInfo;
+    }
+
+    /**
+     * Handle the two-factor authentication process
+     * @param email The user's email address
+     * @return true if 2FA was successful, false otherwise
+     */
+    private boolean handleTwoFactorAuthentication(String email) {
+        try {
+            // Check if email is valid
+            if (email == null || email.isEmpty()) {
+                logger.logError("No email address provided for two-factor authentication.");
+                sgh.showError("Authentication Error", "No email address provided for two-factor authentication.");
+                return false;
+            }
+
+            // Send verification code
+            String verificationCode = TwoFactorAuthUtil.sendVerificationCode(email);
+            if (verificationCode == null) {
+                logger.logError("Failed to send verification code.");
+                sgh.showError("Authentication Error", "Failed to send verification code. Please check your email settings and try again.");
+                return false;
+            }
+
+            // Create a resend action
+            Runnable resendAction = () -> {
+                String newCode = TwoFactorAuthUtil.sendVerificationCode(email);
+                if (newCode != null) {
+                    // Update the expected code in the controller
+                    // This is handled by the TwoFactorAuthGUI class
+                }
+            };
+
+            // Show 2FA prompt
+            boolean verified = sgh.showTwoFactorAuthPrompt(verificationCode, email, resendAction);
+
+            if (verified) {
+                logger.logInfo("Two-factor authentication successful for recovery.");
+                return true;
+            } else {
+                logger.logError("Two-factor authentication failed for recovery.");
+                sgh.showError("Recovery Error", "Two-factor authentication failed. Please try again.");
+                return false;
+            }
+        } catch (Exception e) {
+            logger.logError("Error during two-factor authentication: " + e.getMessage(), e);
+            sgh.showError("Authentication Error", "An error occurred during two-factor authentication: " + e.getMessage());
+            return false;
+        }
     }
 
     private void showRecoverySuccessMessage() {
@@ -336,25 +395,27 @@ public class RecoveryHandler {
     }
 
     /**
-     * Updates the password in the configuration
+     * Updates the password and email in the configuration
      * @param newPassword the new password to set
+     * @param email the email address to set
      * @return true if successful, false otherwise
      */
-    private boolean updatePasswordInConfig(String newPassword) {
+    private boolean updatePasswordInConfig(String newPassword, String email) {
         try {
-            logger.logInfo("Updating password in configuration...");
+            logger.logInfo("Updating password and email in configuration...");
 
             String hashedPassword = EncryptionUtils.hashPassword(newPassword);
             logger.logDebug("Password hashed successfully");
 
-            Main.config.setPasswordHash(hashedPassword);
-            Main.config.getJsonConfig().addProperty("password", hashedPassword);
-            Main.config.saveConfig();
-
-            logger.logInfo("Password updated successfully in configuration");
+            // Store in new storage manager
+            Main.accountStorage.put("password_hash", hashedPassword);
+            Main.accountStorage.put("email", email);
+            Main.accountStorage.put("mode", "unlock");
+            Main.accountStorage.saveData();
+            logger.logInfo("Password and email updated successfully in configuration");
             return true;
         } catch (Exception e) {
-            logger.logError("Error updating password: " + e.getMessage(), e);
+            logger.logError("Error updating password and email: " + e.getMessage(), e);
             logger.logException(e);
             return false;
         }
